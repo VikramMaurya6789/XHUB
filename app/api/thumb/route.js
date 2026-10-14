@@ -57,7 +57,7 @@ async function resolveThumbUrl(id) {
           urlCache.set(id, og);
           return og;
         }
-        lastDiag.note = 'no og:image in HTML';
+        lastDiag.note = `no og:image in HTML (len ${html.length}, hasTitle ${html.includes('<title>')}, captcha ${/captcha|challenge|verify you are human/i.test(html)})`;
       } catch (e) {
         lastDiag.pageStatus = `${pageUrl}: fetch error ${e.message}`;
       }
