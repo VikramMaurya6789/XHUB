@@ -32,35 +32,47 @@ async function resolveThumbUrl(id) {
   if (inflight.has(id)) return inflight.get(id);
 
   const p = (async () => {
-    try {
-      const pageRes = await fetch(`https://www.redtube.com/${id}`, {
-        headers: {
-          'User-Agent': UA,
-          'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Referer': 'https://www.google.com/',
-        },
-        // follow redtube's canonical redirects
-        redirect: 'follow',
-      });
-      if (!pageRes.ok) return null;
-      const html = await pageRes.text();
-      const og = extractOgImage(html);
-      if (og && og.startsWith('http')) {
-        urlCache.set(id, og);
-        return og;
+    // Try redtube.com, fall back to the redtube.net mirror (friendlier to
+    // datacenter IPs and to Indian ISPs).
+    const pageUrls = [
+      `https://www.redtube.com/${id}`,
+      `https://www.redtube.net/${id}`,
+    ];
+    for (const pageUrl of pageUrls) {
+      try {
+        const pageRes = await fetch(pageUrl, {
+          headers: {
+            'User-Agent': UA,
+            'Accept': 'text/html,application/xhtml+xml',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://www.google.com/',
+          },
+          redirect: 'follow',
+        });
+        lastDiag.pageStatus = `${pageUrl}: ${pageRes.status}`;
+        if (!pageRes.ok) continue;
+        const html = await pageRes.text();
+        const og = extractOgImage(html);
+        if (og && og.startsWith('http')) {
+          urlCache.set(id, og);
+          return og;
+        }
+        lastDiag.note = 'no og:image in HTML';
+      } catch (e) {
+        lastDiag.pageStatus = `${pageUrl}: fetch error ${e.message}`;
       }
-      return null;
-    } catch {
-      return null;
-    } finally {
-      inflight.delete(id);
     }
-  })();
+    return null;
+  })().finally(() => {
+    inflight.delete(id);
+  });
 
   inflight.set(id, p);
   return p;
 }
+
+// last resolution diagnostics (surfaced in error responses)
+const lastDiag = { pageStatus: 'n/a', note: '' };
 
 export async function GET(req) {
   try {
@@ -73,7 +85,10 @@ export async function GET(req) {
 
     const imgUrl = await resolveThumbUrl(id);
     if (!imgUrl) {
-      return NextResponse.json({ error: 'thumbnail not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'thumbnail not found', diag: lastDiag },
+        { status: 404 }
+      );
     }
 
     const imgRes = await fetch(imgUrl, {
