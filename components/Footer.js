@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className="site-footer">
       <div className="footer-container">
@@ -11,7 +13,7 @@ export default function Footer() {
               <span className="logo-text">HUB</span>
             </Link>
             <p className="footer-tagline">
-              The world's leading high-performance adult video discovery network. 100% free streaming with zero buffering.
+              The world&apos;s leading high-performance adult video discovery network. 100% free streaming with zero buffering.
             </p>
           </div>
 
@@ -19,7 +21,7 @@ export default function Footer() {
             <div className="footer-col">
               <h4>Information</h4>
               <ul>
-                <li><Link href="/terms">Terms & Conditions</Link></li>
+                <li><Link href="/terms">Terms &amp; Conditions</Link></li>
                 <li><Link href="/privacy">Privacy Policy</Link></li>
                 <li><Link href="/dmca">DMCA / Copyright</Link></li>
                 <li><Link href="/2257">18 U.S.C. 2257 Record-Keeping</Link></li>
@@ -27,11 +29,11 @@ export default function Footer() {
             </div>
 
             <div className="footer-col">
-              <h4>Support & Safety</h4>
+              <h4>Support &amp; Safety</h4>
               <ul>
-                <li><Link href="/contact">Content Removal Request</Link></li>
-                <li><Link href="/contact">Parental Controls</Link></li>
-                <li><Link href="/contact">Trust & Safety</Link></li>
+                <li><Link href="/content-removal">Content Removal Request</Link></li>
+                <li><Link href="/parental-controls">Parental Controls</Link></li>
+                <li><Link href="/trust-safety">Trust &amp; Safety</Link></li>
                 <li><Link href="/contact">Contact Support</Link></li>
               </ul>
             </div>
@@ -50,11 +52,10 @@ export default function Footer() {
 
         <div className="footer-bottom-bar">
           <p className="footer-legal">
-            <strong>RTA (Restricted To Adults)</strong> website. All actors appearing on this website were 18 years of age or older at the time of the creation of such depictions.
-            All video data is indexed from open third-party CDN networks.
+            <strong>RTA (Restricted To Adults)</strong> website. All actors appearing on this website were 18 years of age or older at the time of the creation of such depictions. All video data is indexed from open third-party CDN networks.
           </p>
           <p className="footer-copyright">
-            © {new Date().getFullYear()} XHUB. All rights reserved.
+            © {currentYear} XHUB. All rights reserved.
           </p>
         </div>
       </div>

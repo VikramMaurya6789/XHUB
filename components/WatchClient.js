@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
 import Player from '@/components/Player';
+import { getInitialAvatar } from '@/lib/avatar';
 import {
   ThumbsUpIcon,
   ThumbsDownIcon,
@@ -27,7 +28,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
   // Action states (per-device local storage / state per PRD §5.5)
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
-  const [likeCount, setLikeCount] = useState(initialVideo?.ratingsCount || 1420);
+  const [likeCount, setLikeCount] = useState(initialVideo?.ratingsCount || 0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSavedLater, setIsSavedLater] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -53,7 +54,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
         })
         .then(data => {
           setVideo(data);
-          setLikeCount(data.ratingsCount || 1420);
+          setLikeCount(data.ratingsCount || 0);
           setLoading(false);
           syncLocalStorage(data);
         })
@@ -261,24 +262,24 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
           {/* Uploader Card & Key Stats Bar */}
           <div className="watch-meta-strip">
             <div className="watch-uploader-card">
-              <Link href={`/creators/${video.uploader?.name?.toLowerCase() || 'official'}`}>
+              <Link href={video.uploader?.url || `/creators/${encodeURIComponent(video.uploader?.name?.toLowerCase() || 'official')}`}>
                 <img
-                  src={`https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=90&auto=format&fit=crop&q=80`}
-                  alt={video.uploader?.name}
+                  src={video.uploader?.avatar || getInitialAvatar(video.uploader?.name)}
+                  alt={video.uploader?.name || 'Uploader'}
                   className="uploader-avatar-img"
                   loading="lazy"
                 />
               </Link>
               <div className="uploader-info-box">
                 <Link
-                  href={`/creators/${video.uploader?.name?.toLowerCase() || 'official'}`}
+                  href={video.uploader?.url || `/creators/${encodeURIComponent(video.uploader?.name?.toLowerCase() || 'official')}`}
                   className="uploader-name-verified"
                 >
-                  <span>{video.uploader?.name || 'Verified Creator'}</span>
-                  <BadgeCheckIcon size={15} className="verified-badge-icon" />
+                  <span>{video.uploader?.name || 'Unknown uploader'}</span>
+                  {video.uploader?.verified && <BadgeCheckIcon size={15} className="verified-badge-icon" />}
                 </Link>
                 <span className="uploader-meta-stats">
-                  {video.views} views • {video.age || '3 days ago'}
+                  {video.views} • {video.age || 'Recently'}
                 </span>
               </div>
 
@@ -290,12 +291,14 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
               </button>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span className="card-rating" style={{ fontSize: '0.9rem' }}>
-                <StarIcon size={15} filled={true} />
-                <span>{video.rating}% Approval</span>
-              </span>
-            </div>
+            {video.rating > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span className="card-rating" style={{ fontSize: '0.9rem' }}>
+                  <StarIcon size={15} filled={true} />
+                  <span>{video.rating}% Approval</span>
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Action Bar Semantics (§5.5) */}
@@ -411,10 +414,10 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
             )}
           </div>
 
-          {/* Comments Section (Read-only §5.5) */}
+          {/* Comments Section (R1: Honest empty state, never invent comments) */}
           <section className="watch-comments-section">
             <h3 className="comments-header-title">
-              Comments ({video.comments?.length || 3})
+              Comments ({video.comments?.length || 0})
             </h3>
 
             {/* Disabled Reply Box per §5.5 */}
@@ -422,25 +425,31 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
               <span>Login to comment (Member accounts coming soon in v2)</span>
             </div>
 
-            <div className="comments-list">
-              {(video.comments || []).map(comment => (
-                <div key={comment.id} className="comment-item">
-                  <img
-                    src={comment.avatar}
-                    alt={comment.author}
-                    className="comment-author-avatar"
-                    loading="lazy"
-                  />
-                  <div className="comment-content-box">
-                    <div>
-                      <span className="comment-author-name">{comment.author}</span>
-                      <span className="comment-time">{comment.time}</span>
+            {video.comments && video.comments.length > 0 ? (
+              <div className="comments-list">
+                {video.comments.map(comment => (
+                  <div key={comment.id} className="comment-item">
+                    <img
+                      src={comment.avatar || getInitialAvatar(comment.author)}
+                      alt={comment.author}
+                      className="comment-author-avatar"
+                      loading="lazy"
+                    />
+                    <div className="comment-content-box">
+                      <div>
+                        <span className="comment-author-name">{comment.author}</span>
+                        <span className="comment-time">{comment.time}</span>
+                      </div>
+                      <p className="comment-body-text">{comment.text}</p>
                     </div>
-                    <p className="comment-body-text">{comment.text}</p>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-3)', fontSize: '0.9rem' }}>
+                No comments yet.
+              </div>
+            )}
           </section>
         </div>
 

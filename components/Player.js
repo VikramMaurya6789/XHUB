@@ -36,6 +36,29 @@ export default function Player({
   const [buffered, setBuffered] = useState(0);
   const [useEmbed, setUseEmbed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentEmbedUrl, setCurrentEmbedUrl] = useState(embedUrl);
+  const [retryKey, setRetryKey] = useState(0);
+
+  useEffect(() => {
+    setCurrentEmbedUrl(embedUrl);
+  }, [embedUrl]);
+
+  const handleRetryEmbed = () => {
+    setRetryKey(k => k + 1);
+  };
+
+  const handleToggleSource = () => {
+    setCurrentEmbedUrl(prev => {
+      const url = prev || embedUrl || '';
+      if (url.includes('embed.redtube.net')) {
+        return url.replace('embed.redtube.net', 'embed.redtube.com');
+      } else if (url.includes('embed.redtube.com')) {
+        return url.replace('embed.redtube.com', 'embed.redtube.net');
+      }
+      return url;
+    });
+    setRetryKey(k => k + 1);
+  };
 
   // Available stream source URL
   const activeStreamUrl = hlsUrl || (streams?.length ? streams[0]?.url : null);
@@ -281,13 +304,25 @@ export default function Player({
       onTouchStart={triggerControls}
     >
       {useEmbed || !activeStreamUrl ? (
-        <iframe
-          src={embedUrl}
-          title={title || 'XHUB Stream'}
-          className="player-iframe"
-          allowFullScreen
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        />
+        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+          <iframe
+            key={retryKey}
+            src={currentEmbedUrl ? `${currentEmbedUrl}${currentEmbedUrl.includes('?') ? '&' : '?'}cb=${retryKey}` : ''}
+            title={title || 'XHUB Stream'}
+            className="player-iframe"
+            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
+          <div className="player-recovery-bar">
+            <span>Playback issue?</span>
+            <button type="button" onClick={handleRetryEmbed} className="player-recovery-btn">
+              ↻ Reload Player
+            </button>
+            <button type="button" onClick={handleToggleSource} className="player-recovery-btn secondary">
+              ⇄ Switch Mirror ({currentEmbedUrl?.includes('redtube.net') ? '.net → .com' : '.com → .net'})
+            </button>
+          </div>
+        </div>
       ) : (
         <>
           <video

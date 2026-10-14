@@ -2,6 +2,11 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
 
+export const metadata = {
+  title: 'Privacy Policy — XHUB',
+  description: 'Privacy policy and local-only client-side storage architecture of XHUB.',
+};
+
 export default function PrivacyPage() {
   return (
     <>

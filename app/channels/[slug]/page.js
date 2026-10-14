@@ -62,7 +62,7 @@ export default function ChannelProfilePage({ params }) {
               <BadgeCheckIcon size={18} className="verified-badge-icon" />
             </div>
             <p style={{ color: 'var(--text-3)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-              Official channel network • Streaming in Full 1080p HD
+              Official studio network • {loading ? 'Loading...' : `${videos.length} ${videos.length === 1 ? 'scene' : 'scenes'} indexed`}
             </p>
           </div>
         </div>

@@ -63,7 +63,7 @@ export default async function HomePage() {
               <span>Popular Categories</span>
             </h2>
             <Link href="/categories" className="section-view-all">
-              <span>All 150+ categories</span>
+              <span>View all categories</span>
               <ChevronRightIcon size={16} />
             </Link>
           </div>
@@ -76,7 +76,7 @@ export default async function HomePage() {
                 className="category-chip"
               >
                 <span>{cat.name}</span>
-                <span className="category-chip-count">{cat.count}</span>
+                {cat.count && <span className="category-chip-count">{cat.count}</span>}
               </Link>
             ))}
           </div>
@@ -113,7 +113,7 @@ export default async function HomePage() {
                     <span>{creator.name}</span>
                   </div>
                   <div className="creator-sub-count">
-                    {creator.subscribers} subscribers • {creator.videos} videos
+                    Verified Creator →
                   </div>
                 </div>
               </Link>

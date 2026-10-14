@@ -7,14 +7,14 @@ import { FilmIcon, BadgeCheckIcon, ChevronRightIcon } from '@/components/Icons';
 
 export default function ChannelsPage() {
   const channels = [
-    { slug: 'brazzers', name: 'Brazzers', videos: '1.2K', subs: '2.5M' },
-    { slug: 'realitykings', name: 'Reality Kings', videos: '980', subs: '1.8M' },
-    { slug: 'mofos', name: 'Mofos', videos: '840', subs: '1.4M' },
-    { slug: 'twistys', name: 'Twistys', videos: '620', subs: '980K' },
-    { slug: 'digitaldesire', name: 'Digital Desire', videos: '510', subs: '820K' },
-    { slug: 'babes', name: 'Babes Network', videos: '730', subs: '1.1M' },
-    { slug: 'wicked', name: 'Wicked Pictures', videos: '450', subs: '750K' },
-    { slug: 'evilangel', name: 'Evil Angel', videos: '890', subs: '1.6M' },
+    { slug: 'brazzers', name: 'Brazzers' },
+    { slug: 'realitykings', name: 'Reality Kings' },
+    { slug: 'mofos', name: 'Mofos' },
+    { slug: 'twistys', name: 'Twistys' },
+    { slug: 'digitaldesire', name: 'Digital Desire' },
+    { slug: 'babes', name: 'Babes Network' },
+    { slug: 'wicked', name: 'Wicked Pictures' },
+    { slug: 'evilangel', name: 'Evil Angel' },
   ];
 
   return (
@@ -64,7 +64,7 @@ export default function ChannelsPage() {
                   <BadgeCheckIcon size={15} className="verified-badge-icon" />
                 </div>
                 <div className="creator-sub-count" style={{ marginTop: '0.2rem' }}>
-                  {chan.subs} Subscribers • {chan.videos} Videos
+                  Official Studio Channel →
                 </div>
               </div>
               <ChevronRightIcon size={16} style={{ color: 'var(--text-3)' }} />

@@ -4,14 +4,14 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
 import VideoCard from '@/components/VideoCard';
-import { BadgeCheckIcon, UserIcon } from '@/components/Icons';
+import { BadgeCheckIcon } from '@/components/Icons';
+import { getInitialAvatar } from '@/lib/avatar';
 
 export default function CreatorProfilePage({ params }) {
   const resolvedParams = use(params);
   const slug = resolvedParams?.slug || '';
   const creatorName = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
-  const [activeTab, setActiveTab] = useState('videos');
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -52,7 +52,7 @@ export default function CreatorProfilePage({ params }) {
       <AgeGate />
       <Header />
       <main className="page-wrapper">
-        {/* Creator Banner & Profile Header (§5.8) */}
+        {/* Creator Banner & Profile Header */}
         <div style={{
           position: 'relative',
           background: 'var(--surface)',
@@ -63,7 +63,7 @@ export default function CreatorProfilePage({ params }) {
         }}>
           {/* Cover Banner */}
           <div style={{
-            height: '180px',
+            height: '140px',
             background: 'linear-gradient(135deg, #261502 0%, #151515 50%, #0d0d0d 100%)',
             borderBottom: '1px solid var(--border)'
           }} />
@@ -80,7 +80,7 @@ export default function CreatorProfilePage({ params }) {
           }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1.25rem' }}>
               <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"
+                src={getInitialAvatar(creatorName)}
                 alt={creatorName}
                 style={{
                   width: '90px',
@@ -99,7 +99,7 @@ export default function CreatorProfilePage({ params }) {
                   <BadgeCheckIcon size={18} className="verified-badge-icon" />
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-3)', marginTop: '0.15rem' }}>
-                  840K Subscribers • Verified Content Creator
+                  {loading ? 'Loading catalog...' : `${videos.length} ${videos.length === 1 ? 'video' : 'videos'} uploaded`} • Verified Creator
                 </div>
               </div>
             </div>
@@ -113,75 +113,43 @@ export default function CreatorProfilePage({ params }) {
             </button>
           </div>
 
-          {/* Bio */}
-          <div style={{ padding: '0 2rem 1.25rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-            <p style={{ color: 'var(--text-2)', fontSize: '0.875rem', lineHeight: '1.5', maxWidth: '800px' }}>
-              Welcome to the official {creatorName} channel on XHUB. Watch all exclusive high-definition video uploads, full scenes, and previews with high quality streaming.
-            </p>
-          </div>
-
-          {/* Tabs (§5.8) */}
+          {/* Navigation Bar: honest single tab */}
           <div style={{ display: 'flex', borderTop: '1px solid var(--border)', background: 'var(--surface-2)' }}>
-            <button
-              onClick={() => setActiveTab('videos')}
+            <div
               style={{
                 padding: '0.75rem 1.5rem',
                 fontSize: '0.875rem',
                 fontWeight: 700,
-                color: activeTab === 'videos' ? 'var(--brand)' : 'var(--text-2)',
-                borderBottom: activeTab === 'videos' ? '2px solid var(--brand)' : 'none'
+                color: 'var(--brand)',
+                borderBottom: '2px solid var(--brand)'
               }}
             >
-              Videos ({videos.length || '30+'})
-            </button>
-            <button
-              onClick={() => setActiveTab('photos')}
-              style={{
-                padding: '0.75rem 1.5rem',
-                fontSize: '0.875rem',
-                fontWeight: 700,
-                color: activeTab === 'photos' ? 'var(--brand)' : 'var(--text-2)',
-                borderBottom: activeTab === 'photos' ? '2px solid var(--brand)' : 'none'
-              }}
-            >
-              Photos
-            </button>
+              Videos ({videos.length})
+            </div>
           </div>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === 'videos' ? (
-          <div className="dense-video-grid">
-            {loading ? (
-              Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="video-card-item">
-                  <div className="card-thumb-container skeleton-box" />
-                  <div style={{ marginTop: '0.65rem' }}>
-                    <div className="skeleton-box" style={{ height: '16px', width: '85%', marginBottom: '6px' }} />
-                    <div className="skeleton-box" style={{ height: '12px', width: '45%' }} />
-                  </div>
+        <div className="dense-video-grid">
+          {loading ? (
+            Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="video-card-item">
+                <div className="card-thumb-container skeleton-box" />
+                <div style={{ marginTop: '0.65rem' }}>
+                  <div className="skeleton-box" style={{ height: '16px', width: '85%', marginBottom: '6px' }} />
+                  <div className="skeleton-box" style={{ height: '12px', width: '45%' }} />
                 </div>
-              ))
-            ) : videos.length > 0 ? (
-              videos.map(video => (
-                <VideoCard key={video.vkey || video.id} video={video} />
-              ))
-            ) : (
-              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
-                <p style={{ color: 'var(--text-2)' }}>No videos found for this creator.</p>
               </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: '4rem 1rem', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', marginBottom: '0.4rem' }}>
-              Photo Galleries Coming Soon
-            </h3>
-            <p style={{ color: 'var(--text-3)', fontSize: '0.85rem' }}>
-              Hi-res photo galleries for {creatorName} are currently being indexed.
-            </p>
-          </div>
-        )}
+            ))
+          ) : videos.length > 0 ? (
+            videos.map(video => (
+              <VideoCard key={video.vkey || video.id} video={video} />
+            ))
+          ) : (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
+              <p style={{ color: 'var(--text-2)' }}>No videos found for {creatorName}.</p>
+            </div>
+          )}
+        </div>
       </main>
       <Footer />
     </>

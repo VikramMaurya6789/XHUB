@@ -3,19 +3,23 @@ import { useState, useEffect } from 'react';
 import { ShieldCheckIcon } from './Icons';
 
 export default function AgeGate() {
-  const [showGate, setShowGate] = useState(false);
+  const [showGate, setShowGate] = useState(true);
 
   useEffect(() => {
     try {
-      const hasAccepted = localStorage.getItem('xhub_age_ok') === '1' || document.cookie.includes('xhub_age_ok=1');
-      if (!hasAccepted) {
+      const hasAccepted =
+        (typeof document !== 'undefined' && document.cookie.includes('xhub_age_ok=1')) ||
+        (typeof localStorage !== 'undefined' && localStorage.getItem('xhub_age_ok') === '1');
+
+      if (hasAccepted) {
+        setShowGate(false);
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.remove('age-gate-pending');
+        }
+      } else {
         setShowGate(true);
         if (typeof document !== 'undefined') {
           document.documentElement.classList.add('age-gate-pending');
-        }
-      } else {
-        if (typeof document !== 'undefined') {
-          document.documentElement.classList.remove('age-gate-pending');
         }
       }
     } catch {
@@ -23,7 +27,11 @@ export default function AgeGate() {
     }
   }, []);
 
-  const handleEnter = () => {
+  const handleEnter = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     try {
       localStorage.setItem('xhub_age_ok', '1');
       document.cookie = 'xhub_age_ok=1; max-age=31536000; path=/; SameSite=Lax';
@@ -34,14 +42,18 @@ export default function AgeGate() {
     setShowGate(false);
   };
 
-  const handleExit = () => {
+  const handleExit = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     window.location.href = 'https://www.google.com';
   };
 
   if (!showGate) return null;
 
   return (
-    <div className="age-gate-overlay">
+    <div id="xhub-age-gate" className="age-gate-overlay">
       <div className="age-gate-modal">
         <div className="age-gate-brand">
           <span className="logo-badge">X</span>
@@ -61,10 +73,18 @@ export default function AgeGate() {
         </p>
 
         <div className="age-gate-actions">
-          <button onClick={handleEnter} className="age-gate-enter-btn">
+          <button
+            type="button"
+            onClick={handleEnter}
+            className="age-gate-enter-btn"
+          >
             I am 18 or older — Enter
           </button>
-          <button onClick={handleExit} className="age-gate-exit-btn">
+          <button
+            type="button"
+            onClick={handleExit}
+            className="age-gate-exit-btn"
+          >
             Exit
           </button>
         </div>

@@ -83,7 +83,7 @@ export default function IndianVideosPage() {
               border: '1px solid var(--border)'
             }}
           >
-            {loadingMore ? 'Loading More Releases...' : 'Load More New Releases ↓'}
+            {loadingMore ? 'Loading More Indian Videos...' : 'Load More Indian Videos ↓'}
           </button>
         </div>
       </main>

@@ -4,7 +4,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
 import VideoCard from '@/components/VideoCard';
-import { BadgeCheckIcon, StarIcon } from '@/components/Icons';
+import { BadgeCheckIcon } from '@/components/Icons';
+import { getInitialAvatar } from '@/lib/avatar';
 
 export default function PornstarProfilePage({ params }) {
   const resolvedParams = use(params);
@@ -41,7 +42,7 @@ export default function PornstarProfilePage({ params }) {
           marginBottom: '2rem'
         }}>
           <img
-            src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"
+            src={getInitialAvatar(starName)}
             alt={starName}
             style={{
               width: '84px',
@@ -59,7 +60,7 @@ export default function PornstarProfilePage({ params }) {
               <BadgeCheckIcon size={18} className="verified-badge-icon" />
             </div>
             <p style={{ color: 'var(--text-3)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-              Official Performer Profile • {videos.length || '30+'} HD Scenes Available
+              Official Performer Profile • {loading ? 'Searching...' : `${videos.length} ${videos.length === 1 ? 'scene' : 'scenes'} available`}
             </p>
           </div>
         </div>

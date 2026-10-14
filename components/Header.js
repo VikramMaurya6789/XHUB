@@ -21,9 +21,10 @@ export default function Header() {
     { label: 'Videos', href: '/', exact: true },
     { label: 'Best Videos', href: '/best' },
     { label: 'Short Videos', href: '/shorts' },
+    { label: 'Indian', href: '/indian' },
+    { label: 'New', href: '/new' },
     { label: 'Watch Later', href: '/watch-later' },
     { label: 'Watch History', href: '/history' },
-    { label: 'Indian', href: '/indian' },
     { label: 'Categories', href: '/categories' },
     { label: 'Pornstars', href: '/pornstars' },
     { label: 'Celebrities', href: '/celebrities' },
@@ -50,7 +51,7 @@ export default function Header() {
             <input
               type="text"
               className="search-input"
-              placeholder="Search hundreds of thousands of free videos..."
+              placeholder="Search videos, categories, models..."
               value={query}
               onChange={e => setQuery(e.target.value)}
             />
@@ -87,12 +88,6 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
-          <span
-            className="nav-link nav-disabled"
-            title="Photos gallery coming soon"
-          >
-            Photos
-          </span>
         </div>
       </nav>
 

@@ -4,13 +4,14 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
 import { StarIcon, BadgeCheckIcon } from '@/components/Icons';
+import { getInitialAvatar } from '@/lib/avatar';
 
 export default function CelebritiesPage() {
   const celebs = [
-    { slug: 'kim-kardashian', name: 'Kim Kardashian', count: '12', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
-    { slug: 'paris-hilton', name: 'Paris Hilton', count: '8', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80' },
-    { slug: 'pamela-anderson', name: 'Pamela Anderson', count: '15', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80' },
-    { slug: 'kendra-wilkinson', name: 'Kendra Wilkinson', count: '11', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&auto=format&fit=crop&q=80' },
+    { slug: 'kim-kardashian', name: 'Kim Kardashian' },
+    { slug: 'paris-hilton', name: 'Paris Hilton' },
+    { slug: 'pamela-anderson', name: 'Pamela Anderson' },
+    { slug: 'kendra-wilkinson', name: 'Kendra Wilkinson' },
   ];
 
   return (
@@ -36,15 +37,15 @@ export default function CelebritiesPage() {
           {celebs.map(c => (
             <Link
               key={c.slug}
-              href={`/search?q=${encodeURIComponent(c.name)}`}
+              href={`/celebrities/${c.slug}`}
               className="creator-spotlight-card"
               style={{ padding: '1rem', flexDirection: 'column', textAlign: 'center' }}
             >
               <img
-                src={c.avatar}
+                src={getInitialAvatar(c.name)}
                 alt={c.name}
                 className="creator-avatar"
-                style={{ width: '80px', height: '80px' }}
+                style={{ width: '80px', height: '80px', margin: '0 auto' }}
                 loading="lazy"
               />
               <div style={{ marginTop: '0.5rem' }}>
@@ -52,7 +53,7 @@ export default function CelebritiesPage() {
                   <span>{c.name}</span>
                   <BadgeCheckIcon size={14} className="verified-badge-icon" />
                 </div>
-                <div className="creator-sub-count">{c.count} scenes indexed</div>
+                <div className="creator-sub-count">View Archive →</div>
               </div>
             </Link>
           ))}

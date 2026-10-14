@@ -2,6 +2,11 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
 
+export const metadata = {
+  title: 'Terms of Service — XHUB',
+  description: 'Terms and conditions governing the use of XHUB streaming platform.',
+};
+
 export default function TermsPage() {
   return (
     <>

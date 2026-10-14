@@ -1,113 +1,122 @@
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * XHUB thumbnail proxy — GET /api/thumb?vkey=<video_id>
  *
- * Why this exists: the Redtube API's thumbnail CDN (ei-ph.rdtcdn.com) is dead
- * (HTTP 410 Gone for every thumb), so no card image loads. Redtube video pages
- * still serve a working og:image on pix-cdn77.rdtcdn.com, but it 403s without a
- * redtube.com Referer — browsers can't fake that, so we proxy server-side.
- * Bonus: bytes come from our own domain, which also survives ISP-level blocks
- * of rdtcdn in some regions. Responses are immutable + edge-cached for a year.
+ * Implements A1 Thumbnail Pipeline:
+ * 1. Looks up the video ID in the resolved thumbs map (local public/thumbs.json or raw GitHub main).
+ * 2. Fetches the verified pix-cdn77 / rdtcdn image with Referer: https://www.redtube.com/
+ * 3. Streams back image bytes with Cache-Control: public, max-age=31536000, immutable
+ * 4. Returns 404 JSON only when the id is absent from the map.
  */
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
-// vkey -> resolved og:image URL (thumbs are immutable, cache forever per instance)
-const urlCache = new Map();
-// vkey -> in-flight promise (avoid duplicate page fetches)
-const inflight = new Map();
+const GITHUB_THUMBS_URL =
+  'https://raw.githubusercontent.com/VikramMaurya6789/XHUB/main/public/thumbs.json';
 
-function extractCandidates(html) {
-  const found = [];
-  const push = u => {
-    if (typeof u === 'string' && u.startsWith('http') && !found.includes(u) && found.length < 8) {
-      found.push(u.replace(/&amp;/g, '&'));
-    }
-  };
-  // 1. og:image (both attribute orders)
-  const og =
-    html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
-    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-  if (og) push(og[1]);
-  // 2. JSON-LD thumbnailUrl
-  const ld = html.match(/"thumbnailUrl"\s*:\s*"([^"]+)"/i);
-  if (ld) push(ld[1].replace(/\\\//g, '/'));
-  // 3. video poster attributes
-  const posters = html.matchAll(/poster=["']([^"']+)["']/gi);
-  for (const m of posters) push(m[1]);
-  // 4. any rdtcdn image URL in the page
-  const cdn = html.matchAll(/https?:\/\/[a-z0-9.-]*rdtcdn\.com\/[^"'\\\s]+\.(?:jpg|jpeg|png|webp)/gi);
-  for (const m of cdn) push(m[0]);
-  // 5. any pix-cdn image URL
-  const pix = html.matchAll(/https?:\/\/pix-cdn[0-9]*\.rdtcdn\.com\/[^"'\\\s]+/gi);
-  for (const m of pix) push(m[0]);
-  return found;
-}
+// In-memory cache for ultra-fast hits in warm serverless instances
+let memoryThumbsMap = null;
+let lastFetchTime = 0;
 
-async function resolveThumbUrl(id) {
-  if (urlCache.has(id)) return urlCache.get(id);
-  if (inflight.has(id)) return inflight.get(id);
+async function getThumbsMap() {
+  const now = Date.now();
+  // Return memory map if fetched within last 5 minutes
+  if (memoryThumbsMap && now - lastFetchTime < 5 * 60 * 1000) {
+    return memoryThumbsMap;
+  }
 
-  const p = (async () => {
-    // Try redtube.com, fall back to the redtube.net mirror (friendlier to
-    // datacenter IPs and to Indian ISPs).
-    const pageUrls = [
-      `https://www.redtube.com/${id}`,
-      `https://www.redtube.net/${id}`,
-    ];
-    for (const pageUrl of pageUrls) {
-      try {
-        const pageRes = await fetch(pageUrl, {
-          headers: {
-            'User-Agent': UA,
-            'Accept': 'text/html,application/xhtml+xml',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Referer': 'https://www.google.com/',
-          },
-          redirect: 'follow',
-        });
-        lastDiag.pageStatus = `${pageUrl}: ${pageRes.status}`;
-        if (!pageRes.ok) continue;
-        const html = await pageRes.text();
-        const candidates = extractCandidates(html);
-        lastDiag.candidates = candidates.map(c => c.slice(0, 90));
-        const og = candidates[0] || null;
-        if (og && og.startsWith('http')) {
-          urlCache.set(id, og);
-          return og;
-        }
-        lastDiag.note = `no usable image in HTML (len ${html.length})`;
-      } catch (e) {
-        lastDiag.pageStatus = `${pageUrl}: fetch error ${e.message}`;
+  // 1. Try local filesystem (fastest in local dev & bundled deployments)
+  try {
+    const localPath = path.join(process.cwd(), 'public', 'thumbs.json');
+    if (fs.existsSync(localPath)) {
+      const content = fs.readFileSync(localPath, 'utf8');
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === 'object') {
+        memoryThumbsMap = parsed;
+        lastFetchTime = now;
+        return memoryThumbsMap;
       }
     }
-    return null;
-  })().finally(() => {
-    inflight.delete(id);
-  });
+  } catch (e) {
+    // Continue to GitHub raw fallback
+  }
 
-  inflight.set(id, p);
-  return p;
+  // 2. Fetch from raw GitHub repository with ISR revalidation
+  try {
+    const res = await fetch(GITHUB_THUMBS_URL, {
+      next: { revalidate: 1200 },
+      headers: { 'User-Agent': UA },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === 'object') {
+        memoryThumbsMap = data;
+        lastFetchTime = now;
+        return memoryThumbsMap;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to fetch remote thumbs.json:', e.message);
+  }
+
+  return memoryThumbsMap || {};
 }
 
-// last resolution diagnostics (surfaced in error responses)
-const lastDiag = { pageStatus: 'n/a', note: '' };
+// Fallback resolver for local development or IDs not yet in the map
+async function resolveDirectFallback(id) {
+  const mirrors = [
+    `https://www.redtube.net/${id}`,
+    `https://www.redtube.com/${id}`,
+  ];
+  for (const pageUrl of mirrors) {
+    try {
+      const pageRes = await fetch(pageUrl, {
+        headers: {
+          'User-Agent': UA,
+          'Accept': 'text/html,application/xhtml+xml',
+          'Referer': 'https://www.google.com/',
+        },
+        redirect: 'follow',
+      });
+      if (!pageRes.ok) continue;
+      const html = await pageRes.text();
+      const m1 = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
+      if (m1 && m1[1] && m1[1].startsWith('http')) return m1[1].replace(/&amp;/g, '&');
+      const m2 = html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+      if (m2 && m2[1] && m2[1].startsWith('http')) return m2[1].replace(/&amp;/g, '&');
+      const m3 = html.match(/"thumbnailUrl"\s*:\s*"([^"]+)"/i);
+      if (m3 && m3[1]) return m3[1].replace(/\\\//g, '/').replace(/&amp;/g, '&');
+    } catch {}
+  }
+  return null;
+}
 
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const raw = searchParams.get('vkey') || '';
     const id = raw.replace(/[^\d]/g, '');
+
     if (!id) {
       return NextResponse.json({ error: 'vkey required' }, { status: 400 });
     }
 
-    const imgUrl = await resolveThumbUrl(id);
+    const map = await getThumbsMap();
+    let entry = map[id];
+    let imgUrl = typeof entry === 'string' ? entry : entry?.url;
+
+    // If not in map, try direct resolve fallback
+    if (!imgUrl) {
+      imgUrl = await resolveDirectFallback(id);
+    }
+
     if (!imgUrl) {
       return NextResponse.json(
-        { error: 'thumbnail not found', diag: lastDiag },
+        { error: 'thumbnail not found', vkey: id },
         { status: 404 }
       );
     }
@@ -119,13 +128,17 @@ export async function GET(req) {
         'Accept': 'image/avif,image/webp,image/*,*/*;q=0.8',
       },
     });
+
     if (!imgRes.ok || !imgRes.body) {
-      urlCache.delete(id); // stale — retry next time
-      return NextResponse.json({ error: 'thumbnail fetch failed' }, { status: 502 });
+      return NextResponse.json(
+        { error: 'thumbnail upstream fetch failed', status: imgRes.status },
+        { status: 502 }
+      );
     }
 
     const buf = await imgRes.arrayBuffer();
     const ct = imgRes.headers.get('content-type') || 'image/jpeg';
+
     return new NextResponse(buf, {
       status: 200,
       headers: {

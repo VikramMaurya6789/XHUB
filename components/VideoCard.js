@@ -87,83 +87,89 @@ export default function VideoCard({ video, priority = false }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      <Link href={watchUrl} className="video-card-link">
-        <div className="card-thumb-container">
-          <img
-            src={currentDisplayThumb}
-            alt={video.title}
-            className={`card-thumbnail ${isHovered && hasPreview ? 'is-faded' : ''}`}
-            loading={priority ? 'eager' : 'lazy'}
-            decoding="async"
-            onError={e => {
-              // Thumbnail failed (CDN down/blocked) — show branded placeholder
-              // instead of a broken-image icon.
-              e.currentTarget.style.display = 'none';
-              const ph = e.currentTarget.parentElement?.querySelector('.card-thumb-fallback');
-              if (ph) ph.style.display = 'flex';
-            }}
-          />
-          <div
-            className="card-thumb-fallback"
-            style={{
-              display: 'none',
-              position: 'absolute',
-              inset: 0,
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'linear-gradient(135deg, #1a1a1a 0%, #2a1503 100%)',
-              color: '#ff6b00',
-              fontWeight: 800,
-              fontSize: '1.4rem',
-              letterSpacing: '0.1em',
-            }}
-            aria-hidden="true"
-          >
-            XHUB
-          </div>
-
-          {isHovered && thumbs && thumbs.length > 1 && !hasPreview && (
-            <div className="card-scrub-indicator">
-              <div
-                className="card-scrub-progress"
-                style={{ width: `${((thumbIndex + 1) / thumbs.length) * 100}%` }}
-              />
-            </div>
-          )}
-
-          {isHovered && hasPreview && (
-            <video
-              ref={videoRef}
-              src={previewSrc}
-              muted
-              playsInline
-              loop
-              className="card-preview-video"
+      {/* Thumbnail section with sibling watch later button (R5: prevents accidental navigation) */}
+      <div className="card-thumb-wrapper">
+        <Link href={watchUrl} className="card-thumb-link" aria-label={video.title}>
+          <div className="card-thumb-container">
+            <img
+              src={currentDisplayThumb}
+              alt={video.title}
+              className={`card-thumbnail ${isHovered && hasPreview ? 'is-faded' : ''}`}
+              loading={priority ? 'eager' : 'lazy'}
+              decoding="async"
+              onError={e => {
+                e.currentTarget.style.display = 'none';
+                const ph = e.currentTarget.parentElement?.querySelector('.card-thumb-fallback');
+                if (ph) ph.style.display = 'flex';
+              }}
             />
-          )}
+            <div
+              className="card-thumb-fallback"
+              style={{
+                display: 'none',
+                position: 'absolute',
+                inset: 0,
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(135deg, #1a1a1a 0%, #2a1503 100%)',
+                color: '#ff6b00',
+                fontWeight: 800,
+                fontSize: '1.4rem',
+                letterSpacing: '0.1em',
+              }}
+              aria-hidden="true"
+            >
+              XHUB
+            </div>
 
-          {video.hd !== false && (
-            <span className="card-quality-badge">HD</span>
-          )}
+            {isHovered && thumbs && thumbs.length > 1 && !hasPreview && (
+              <div className="card-scrub-indicator">
+                <div
+                  className="card-scrub-progress"
+                  style={{ width: `${((thumbIndex + 1) / thumbs.length) * 100}%` }}
+                />
+              </div>
+            )}
 
-          {video.duration && (
-            <span className="card-duration-badge">{video.duration}</span>
-          )}
+            {isHovered && hasPreview && (
+              <video
+                ref={videoRef}
+                src={previewSrc}
+                muted
+                playsInline
+                loop
+                className="card-preview-video"
+              />
+            )}
 
-          <button
-            onClick={handleToggleWatchLater}
-            className={`card-watch-later-btn ${isSaved ? 'saved' : ''}`}
-            title={isSaved ? 'In Watch Later' : 'Add to Watch Later'}
-            aria-label="Save to Watch Later"
-          >
-            {isSaved ? <CheckIcon size={14} /> : <ClockIcon size={14} />}
-          </button>
+            {video.hd !== false && (
+              <span className="card-quality-badge">HD</span>
+            )}
 
-          <div className="card-hover-play-btn">
-            <PlayIcon size={20} />
+            {video.duration && (
+              <span className="card-duration-badge">{video.duration}</span>
+            )}
+
+            <div className="card-hover-play-btn">
+              <PlayIcon size={20} />
+            </div>
           </div>
-        </div>
+        </Link>
 
+        {/* Watch later button rendered as a sibling, NOT inside <a> */}
+        <button
+          type="button"
+          onClick={handleToggleWatchLater}
+          className={`card-watch-later-btn ${isSaved ? 'saved' : ''}`}
+          title={isSaved ? 'In Watch Later' : 'Add to Watch Later'}
+          aria-label="Save to Watch Later"
+        >
+          {isSaved ? <CheckIcon size={14} /> : <ClockIcon size={14} />}
+        </button>
+      </div>
+
+      {/* Details section */}
+      <Link href={watchUrl} className="card-details-link">
         <div className="card-details">
           <h3 className="card-title" title={video.title}>
             {video.title}
@@ -171,29 +177,30 @@ export default function VideoCard({ video, priority = false }) {
 
           <div className="card-uploader-row">
             <span className="card-uploader-name">
-              {video.uploader?.name || 'Verified Creator'}
+              {video.uploader?.name || 'Unknown uploader'}
             </span>
-            <BadgeCheckIcon size={13} className="verified-badge-icon" />
-            <span className="card-views-count">
-              • {video.views} views
-            </span>
+            {video.uploader?.verified && (
+              <BadgeCheckIcon size={13} className="verified-badge-icon" />
+            )}
+            {video.views && (
+              <span className="card-views-count">
+                {' • '}{video.views}
+              </span>
+            )}
           </div>
 
           <div className="card-meta-row">
-            {video.rating != null ? (
-              <span className="card-rating">
-                <StarIcon size={12} filled={true} />
-                <span>{video.rating}%</span>
-              </span>
-            ) : (
-              <span className="card-rating">
-                <StarIcon size={12} filled={true} />
-                <span>94%</span>
-              </span>
+            {video.rating != null && (
+              <>
+                <span className="card-rating">
+                  <StarIcon size={12} filled={true} />
+                  <span>{video.rating}%</span>
+                </span>
+                <span className="card-meta-dot">•</span>
+              </>
             )}
-            <span className="card-meta-dot">•</span>
             <span className="card-age">
-              {video.age || '3 days ago'}
+              {video.age || 'Recently'}
             </span>
           </div>
         </div>

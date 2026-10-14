@@ -9,18 +9,10 @@ import { FilmIcon, ChevronRightIcon } from '@/components/Icons';
 export default function CategoriesIndexPage() {
   const extendedCategories = [
     ...POPULAR_CATEGORIES,
-    { slug: 'bbw', name: 'BBW', count: '38K' },
-    { slug: 'brunette', name: 'Brunette', count: '89K' },
-    { slug: 'blonde', name: 'Blonde', count: '105K' },
-    { slug: 'redhead', name: 'Redhead', count: '32K' },
-    { slug: 'threesome', name: 'Threesome', count: '45K' },
-    { slug: 'interracial', name: 'Interracial', count: '63K' },
-    { slug: 'masturbation', name: 'Solo / Masturbation', count: '78K' },
-    { slug: 'compilation', name: 'Compilation', count: '29K' },
-    { slug: 'hardcore', name: 'Hardcore', count: '94K' },
-    { slug: 'fetish', name: 'Fetish & Feet', count: '42K' },
-    { slug: 'vr', name: 'VR Videos', count: '18K' },
-    { slug: 'vintage', name: 'Vintage / Classic', count: '15K' }
+    { slug: 'hardcore', name: 'Hardcore' },
+    { slug: 'fetish', name: 'Fetish & Feet' },
+    { slug: 'vr', name: 'VR Videos' },
+    { slug: 'vintage', name: 'Vintage / Classic' }
   ];
 
   return (
@@ -34,7 +26,7 @@ export default function CategoriesIndexPage() {
             <span>All Video Categories</span>
           </h1>
           <p style={{ color: 'var(--text-3)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-            Browse through hundreds of niche adult topics and curated collections
+            Browse popular adult topics and curated categories
           </p>
         </div>
 
@@ -69,7 +61,7 @@ export default function CategoriesIndexPage() {
             >
               <div>
                 <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#fff' }}>{cat.name}</h3>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{cat.count} videos</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>Browse Category →</span>
               </div>
               <ChevronRightIcon size={16} style={{ color: 'var(--brand)' }} />
             </Link>

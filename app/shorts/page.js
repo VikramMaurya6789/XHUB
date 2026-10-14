@@ -111,12 +111,16 @@ export default function ShortsPage() {
                     {video.title}
                   </h3>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span>{video.views} views</span>
-                    <span>•</span>
-                    <span style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <StarIcon size={11} filled={true} />
-                      {video.rating}%
-                    </span>
+                    <span>{video.views}</span>
+                    {video.rating > 0 && (
+                      <>
+                        <span>•</span>
+                        <span style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          <StarIcon size={11} filled={true} />
+                          {video.rating}%
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               </Link>

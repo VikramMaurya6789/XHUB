@@ -2,6 +2,11 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
 
+export const metadata = {
+  title: '18 U.S.C. 2257 Compliance — XHUB',
+  description: '18 U.S.C. Section 2257 and 28 C.F.R. Part 75 record-keeping compliance statement for XHUB.',
+};
+
 export default function Compliance2257Page() {
   return (
     <>
