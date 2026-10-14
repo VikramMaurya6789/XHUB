@@ -19,12 +19,31 @@ const urlCache = new Map();
 // vkey -> in-flight promise (avoid duplicate page fetches)
 const inflight = new Map();
 
-function extractOgImage(html) {
-  const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-  if (!m) return null;
-  // decode HTML entities (&amp; -> &)
-  return m[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+function extractCandidates(html) {
+  const found = [];
+  const push = u => {
+    if (typeof u === 'string' && u.startsWith('http') && !found.includes(u) && found.length < 8) {
+      found.push(u.replace(/&amp;/g, '&'));
+    }
+  };
+  // 1. og:image (both attribute orders)
+  const og =
+    html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+  if (og) push(og[1]);
+  // 2. JSON-LD thumbnailUrl
+  const ld = html.match(/"thumbnailUrl"\s*:\s*"([^"]+)"/i);
+  if (ld) push(ld[1].replace(/\\\//g, '/'));
+  // 3. video poster attributes
+  const posters = html.matchAll(/poster=["']([^"']+)["']/gi);
+  for (const m of posters) push(m[1]);
+  // 4. any rdtcdn image URL in the page
+  const cdn = html.matchAll(/https?:\/\/[a-z0-9.-]*rdtcdn\.com\/[^"'\\\s]+\.(?:jpg|jpeg|png|webp)/gi);
+  for (const m of cdn) push(m[0]);
+  // 5. any pix-cdn image URL
+  const pix = html.matchAll(/https?:\/\/pix-cdn[0-9]*\.rdtcdn\.com\/[^"'\\\s]+/gi);
+  for (const m of pix) push(m[0]);
+  return found;
 }
 
 async function resolveThumbUrl(id) {
@@ -52,12 +71,14 @@ async function resolveThumbUrl(id) {
         lastDiag.pageStatus = `${pageUrl}: ${pageRes.status}`;
         if (!pageRes.ok) continue;
         const html = await pageRes.text();
-        const og = extractOgImage(html);
+        const candidates = extractCandidates(html);
+        lastDiag.candidates = candidates.map(c => c.slice(0, 90));
+        const og = candidates[0] || null;
         if (og && og.startsWith('http')) {
           urlCache.set(id, og);
           return og;
         }
-        lastDiag.note = `no og:image in HTML (len ${html.length}, hasTitle ${html.includes('<title>')}, captcha ${/captcha|challenge|verify you are human/i.test(html)})`;
+        lastDiag.note = `no usable image in HTML (len ${html.length})`;
       } catch (e) {
         lastDiag.pageStatus = `${pageUrl}: fetch error ${e.message}`;
       }
