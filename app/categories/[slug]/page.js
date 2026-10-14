@@ -10,7 +10,7 @@ import { FilmIcon } from '@/components/Icons';
 function CategoryFeedInner({ slug }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const sort = searchParams.get('sort') || 'mostviewed';
+  const sort = searchParams.get('sort') || 'newest';
 
   const categoryTitle = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
