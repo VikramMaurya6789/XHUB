@@ -46,12 +46,18 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
   const [streamsRetrying, setStreamsRetrying] = useState(false);
 
   // Fetch direct mp4 streams with retry (sync refreshes every 30min).
+  // URLs are rewritten through /api/vproxy because Redtube's CDN only serves
+  // video to redtube.com referers — browsers get 410 on direct URLs.
   const fetchStreams = (vkey, attempt = 0) => {
     fetch(`/api/stream?vkey=${encodeURIComponent(vkey)}`)
       .then(res => (res.ok ? res.json() : null))
       .then(data => {
         if (data?.qualities?.length) {
-          setStreams(data.qualities);
+          const proxied = data.qualities.map(s => ({
+            ...s,
+            url: `/api/vproxy?vkey=${encodeURIComponent(vkey)}&q=${encodeURIComponent(s.quality)}`,
+          }));
+          setStreams(proxied);
           setStreamsRetrying(false);
         } else if (attempt < 6) {
           // No streams yet or refreshing — retry in 10s (max 1 min).
