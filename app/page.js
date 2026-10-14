@@ -1,10 +1,9 @@
-'use client';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
 import VideoCard from '@/components/VideoCard';
+import TrendingFeedClient from '@/components/TrendingFeedClient';
 import {
   FlameIcon,
   SparklesIcon,
@@ -13,58 +12,22 @@ import {
   ChevronRightIcon,
   FilmIcon
 } from '@/components/Icons';
-import { POPULAR_CATEGORIES, SPOTLIGHT_CREATORS } from '@/lib/videos';
+import { POPULAR_CATEGORIES, SPOTLIGHT_CREATORS, getFeed } from '@/lib/videos';
 
-export default function HomePage() {
-  const [featuredVideos, setFeaturedVideos] = useState([]);
-  const [trendingVideos, setTrendingVideos] = useState([]);
-  const [newVideos, setNewVideos] = useState([]);
-  const [indianVideos, setIndianVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
+export const revalidate = 900;
 
-  useEffect(() => {
-    async function loadInitialData() {
-      setLoading(true);
-      try {
-        const [hotRes, trendRes, newRes, indianRes] = await Promise.all([
-          fetch('/api/feed?section=hot&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
-          fetch('/api/feed?section=trending&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
-          fetch('/api/feed?section=new&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
-          fetch('/api/feed?section=indian&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
-        ]);
+export default async function HomePage() {
+  const [hotData, trendData, newData, indianData] = await Promise.all([
+    getFeed('hot', 1).catch(() => []),
+    getFeed('trending', 1).catch(() => []),
+    getFeed('new', 1).catch(() => []),
+    getFeed('indian', 1).catch(() => []),
+  ]);
 
-        setFeaturedVideos((hotRes.videos || []).slice(0, 5));
-        setTrendingVideos(trendRes.videos || []);
-        setNewVideos((newRes.videos || []).slice(0, 10));
-        setIndianVideos((indianRes.videos || []).slice(0, 10));
-      } catch (err) {
-        console.error('Failed to load initial feeds:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadInitialData();
-  }, []);
-
-  const handleLoadMoreTrending = async () => {
-    setLoadingMore(true);
-    const nextPage = page + 1;
-    try {
-      const res = await fetch(`/api/feed?section=trending&page=${nextPage}`);
-      const data = await res.json();
-      if (data.videos && data.videos.length > 0) {
-        setTrendingVideos(prev => [...prev, ...data.videos]);
-        setPage(nextPage);
-      }
-    } catch (err) {
-      console.error('Error loading more:', err);
-    } finally {
-      setLoadingMore(false);
-    }
-  };
+  const featuredVideos = (Array.isArray(hotData) ? hotData : hotData?.videos || []).slice(0, 5);
+  const trendingVideos = Array.isArray(trendData) ? trendData : trendData?.videos || [];
+  const newVideos = (Array.isArray(newData) ? newData : newData?.videos || []).slice(0, 10);
+  const indianVideos = (Array.isArray(indianData) ? indianData : indianData?.videos || []).slice(0, 5);
 
   return (
     <>
@@ -86,19 +49,9 @@ export default function HomePage() {
           </div>
 
           <div className="dense-video-grid">
-            {loading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="video-card-item">
-                    <div className="card-thumb-container skeleton-box" />
-                    <div style={{ marginTop: '0.65rem' }}>
-                      <div className="skeleton-box" style={{ height: '16px', width: '90%', marginBottom: '6px' }} />
-                      <div className="skeleton-box" style={{ height: '12px', width: '50%' }} />
-                    </div>
-                  </div>
-                ))
-              : featuredVideos.map(video => (
-                  <VideoCard key={video.vkey || video.id} video={video} priority={true} />
-                ))}
+            {featuredVideos.map(video => (
+              <VideoCard key={video.vkey || video.id} video={video} priority={true} />
+            ))}
           </div>
         </section>
 
@@ -181,39 +134,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="dense-video-grid">
-            {loading
-              ? Array.from({ length: 15 }).map((_, i) => (
-                  <div key={i} className="video-card-item">
-                    <div className="card-thumb-container skeleton-box" />
-                    <div style={{ marginTop: '0.65rem' }}>
-                      <div className="skeleton-box" style={{ height: '16px', width: '85%', marginBottom: '6px' }} />
-                      <div className="skeleton-box" style={{ height: '12px', width: '45%' }} />
-                    </div>
-                  </div>
-                ))
-              : trendingVideos.map(video => (
-                  <VideoCard key={video.vkey || video.id} video={video} />
-                ))}
-          </div>
-
-          {/* Infinite Scroll / Load More trigger (§5.3) */}
-          <div style={{ display: 'flex', justifyContent: 'center', margin: '2.5rem 0 1rem' }}>
-            <button
-              onClick={handleLoadMoreTrending}
-              disabled={loadingMore}
-              className="filter-pill-btn"
-              style={{
-                padding: '0.8rem 2.2rem',
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                background: 'var(--surface-2)',
-                border: '1px solid var(--border)'
-              }}
-            >
-              {loadingMore ? 'Loading More Videos...' : 'Load More Videos ↓'}
-            </button>
-          </div>
+          <TrendingFeedClient initialVideos={trendingVideos} />
         </section>
 
         {/* Section 5: "New" feed grid (§5.3) */}
@@ -230,19 +151,9 @@ export default function HomePage() {
           </div>
 
           <div className="dense-video-grid">
-            {loading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="video-card-item">
-                    <div className="card-thumb-container skeleton-box" />
-                    <div style={{ marginTop: '0.65rem' }}>
-                      <div className="skeleton-box" style={{ height: '16px', width: '80%', marginBottom: '6px' }} />
-                      <div className="skeleton-box" style={{ height: '12px', width: '50%' }} />
-                    </div>
-                  </div>
-                ))
-              : newVideos.map(video => (
-                  <VideoCard key={video.vkey || video.id} video={video} />
-                ))}
+            {newVideos.map(video => (
+              <VideoCard key={video.vkey || video.id} video={video} />
+            ))}
           </div>
         </section>
 
@@ -260,19 +171,9 @@ export default function HomePage() {
           </div>
 
           <div className="dense-video-grid">
-            {loading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="video-card-item">
-                    <div className="card-thumb-container skeleton-box" />
-                    <div style={{ marginTop: '0.65rem' }}>
-                      <div className="skeleton-box" style={{ height: '16px', width: '80%', marginBottom: '6px' }} />
-                      <div className="skeleton-box" style={{ height: '12px', width: '50%' }} />
-                    </div>
-                  </div>
-                ))
-              : indianVideos.map(video => (
-                  <VideoCard key={video.vkey || video.id} video={video} />
-                ))}
+            {indianVideos.map(video => (
+              <VideoCard key={video.vkey || video.id} video={video} />
+            ))}
           </div>
         </section>
       </main>

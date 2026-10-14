@@ -109,14 +109,15 @@ function SearchInner() {
           <div className="filter-pills-row">
             {[
               { id: 'relevant', label: 'Most Relevant' },
-              { id: 'mostviewed', label: 'Most Viewed' },
+              { id: 'views', label: 'Most Viewed' },
               { id: 'rating', label: 'Top Rated' },
               { id: 'newest', label: 'Newest' },
+              { id: 'longest', label: 'Longest' },
             ].map(s => (
               <button
                 key={s.id}
                 onClick={() => updateFilters('sort', s.id)}
-                className={`filter-pill-btn ${sortParam === s.id ? 'active' : ''}`}
+                className={`filter-pill-btn ${(sortParam === s.id || (s.id === 'views' && sortParam === 'mostviewed')) ? 'active' : ''}`}
               >
                 {s.label}
               </button>

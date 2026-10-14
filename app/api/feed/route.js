@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getFeed } from '../../../lib/videos.js';
+import { getFeed } from '@/lib/videos.js';
 
 export async function GET(req) {
   try {
@@ -12,11 +12,11 @@ export async function GET(req) {
       { videos, section, page },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=3600',
         },
       }
     );
   } catch (e) {
-    return NextResponse.json({ error: e.message, stack: e.stack?.slice(0, 500), videos: [] }, { status: 500 });
+    return NextResponse.json({ error: e.message, videos: [] }, { status: 500 });
   }
 }

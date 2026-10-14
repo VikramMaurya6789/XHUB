@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { searchVideos } from '../../../lib/videos.js';
+import { searchVideos } from '@/lib/videos.js';
 
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const q = searchParams.get('q');
-    const sort = searchParams.get('sort') || 'mostviewed';
+    const sort = searchParams.get('sort') || 'relevant';
     const dur = searchParams.get('dur') || 'all';
     const quality = searchParams.get('quality') || 'all';
     const page = parseInt(searchParams.get('page') || '1', 10);
@@ -20,7 +20,7 @@ export async function GET(req) {
       { videos, query: q, sort, dur, quality, page },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=3600',
         },
       }
     );

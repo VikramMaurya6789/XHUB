@@ -10,6 +10,13 @@ export default function AgeGate() {
       const hasAccepted = localStorage.getItem('xhub_age_ok') === '1' || document.cookie.includes('xhub_age_ok=1');
       if (!hasAccepted) {
         setShowGate(true);
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.add('age-gate-pending');
+        }
+      } else {
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.remove('age-gate-pending');
+        }
       }
     } catch {
       setShowGate(false);
@@ -21,6 +28,9 @@ export default function AgeGate() {
       localStorage.setItem('xhub_age_ok', '1');
       document.cookie = 'xhub_age_ok=1; max-age=31536000; path=/; SameSite=Lax';
     } catch {}
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.remove('age-gate-pending');
+    }
     setShowGate(false);
   };
 

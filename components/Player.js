@@ -356,50 +356,56 @@ export default function Player({
               </div>
 
               <div className="player-controls-right">
-                {/* Settings menu toggle */}
-                <div className="player-settings-wrap">
-                  <button
-                    onClick={() => setShowSettings(!showSettings)}
-                    className="player-btn"
-                    title="Playback settings"
-                  >
-                    <SettingsIcon size={19} />
-                  </button>
+                {/* Settings menu toggle - only show if there are functional controls */}
+                {(Boolean(hlsUrl) || (Boolean(activeStreamUrl) && !useEmbed)) && (
+                  <div className="player-settings-wrap">
+                    <button
+                      onClick={() => setShowSettings(!showSettings)}
+                      className="player-btn"
+                      title="Playback settings"
+                    >
+                      <SettingsIcon size={19} />
+                    </button>
 
-                  {showSettings && (
-                    <div className="player-settings-dropdown">
-                      <div className="settings-section">
-                        <div className="settings-label">Quality</div>
-                        <div className="settings-options">
-                          {qualities.map(q => (
-                            <button
-                              key={q}
-                              onClick={() => changeQuality(q)}
-                              className={`settings-opt-btn ${currentQuality === q ? 'active' : ''}`}
-                            >
-                              {q}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                    {showSettings && (
+                      <div className="player-settings-dropdown">
+                        {Boolean(hlsUrl) && (
+                          <div className="settings-section">
+                            <div className="settings-label">Quality</div>
+                            <div className="settings-options">
+                              {qualities.map(q => (
+                                <button
+                                  key={q}
+                                  onClick={() => changeQuality(q)}
+                                  className={`settings-opt-btn ${currentQuality === q ? 'active' : ''}`}
+                                >
+                                  {q}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
-                      <div className="settings-section">
-                        <div className="settings-label">Speed</div>
-                        <div className="settings-options">
-                          {speeds.map(s => (
-                            <button
-                              key={s}
-                              onClick={() => changeSpeed(s)}
-                              className={`settings-opt-btn ${playbackSpeed === s ? 'active' : ''}`}
-                            >
-                              {s}x
-                            </button>
-                          ))}
-                        </div>
+                        {Boolean(activeStreamUrl) && !useEmbed && (
+                          <div className="settings-section">
+                            <div className="settings-label">Speed</div>
+                            <div className="settings-options">
+                              {speeds.map(s => (
+                                <button
+                                  key={s}
+                                  onClick={() => changeSpeed(s)}
+                                  className={`settings-opt-btn ${playbackSpeed === s ? 'active' : ''}`}
+                                >
+                                  {s}x
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
 
                 {onTheaterToggle && (
                   <button

@@ -5,8 +5,10 @@ import { BadgeCheckIcon, StarIcon, ClockIcon, PlayIcon, CheckIcon } from './Icon
 
 export default function VideoCard({ video, priority = false }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [thumbIndex, setThumbIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
   const hoverTimeoutRef = useRef(null);
+  const scrubIntervalRef = useRef(null);
   const videoRef = useRef(null);
 
   if (!video) return null;
@@ -14,18 +16,44 @@ export default function VideoCard({ video, priority = false }) {
   const vkey = video.vkey || video.id;
   const watchUrl = `/watch/${encodeURIComponent(vkey)}`;
 
+  const thumbs = Array.isArray(video.thumbsList) && video.thumbsList.length > 0 ? video.thumbsList : null;
+  const hasPreview = Boolean(video.previewVideo || video.previewFallback);
+  const previewSrc = video.previewVideo || video.previewFallback;
+
   const handleMouseEnter = () => {
+    // Only trigger hover preview on devices that support hover (not mobile touch)
+    if (typeof window !== 'undefined' && window.matchMedia && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
+
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(true);
       if (videoRef.current) {
         videoRef.current.play().catch(() => {});
+      } else if (thumbs && thumbs.length > 1) {
+        let idx = 0;
+        scrubIntervalRef.current = setInterval(() => {
+          idx = (idx + 1) % thumbs.length;
+          setThumbIndex(idx);
+        }, 220);
       }
-    }, 250);
+    }, 180);
+  };
+
+  const handleMouseMove = e => {
+    if (!thumbs || thumbs.length <= 1) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const pct = Math.max(0, Math.min(1, x / rect.width));
+    const targetIdx = Math.floor(pct * (thumbs.length - 1));
+    setThumbIndex(targetIdx);
   };
 
   const handleMouseLeave = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    if (scrubIntervalRef.current) clearInterval(scrubIntervalRef.current);
     setIsHovered(false);
+    setThumbIndex(0);
     if (videoRef.current) {
       videoRef.current.pause();
       videoRef.current.currentTime = 0;
@@ -50,19 +78,19 @@ export default function VideoCard({ video, priority = false }) {
     } catch {}
   };
 
-  const hasPreview = Boolean(video.previewVideo || video.previewFallback);
-  const previewSrc = video.previewVideo || video.previewFallback;
+  const currentDisplayThumb = isHovered && thumbs && thumbs[thumbIndex] ? thumbs[thumbIndex] : video.thumb;
 
   return (
     <div
       className="video-card-item"
       onMouseEnter={handleMouseEnter}
+      onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
       <Link href={watchUrl} className="video-card-link">
         <div className="card-thumb-container">
           <img
-            src={video.thumb}
+            src={currentDisplayThumb}
             alt={video.title}
             className={`card-thumbnail ${isHovered && hasPreview ? 'is-faded' : ''}`}
             loading={priority ? 'eager' : 'lazy'}
@@ -93,6 +121,15 @@ export default function VideoCard({ video, priority = false }) {
           >
             XHUB
           </div>
+
+          {isHovered && thumbs && thumbs.length > 1 && !hasPreview && (
+            <div className="card-scrub-indicator">
+              <div
+                className="card-scrub-progress"
+                style={{ width: `${((thumbIndex + 1) / thumbs.length) * 100}%` }}
+              />
+            </div>
+          )}
 
           {isHovered && hasPreview && (
             <video
