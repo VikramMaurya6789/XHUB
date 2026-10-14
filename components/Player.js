@@ -7,7 +7,8 @@ import {
   Volume2Icon,
   VolumeXIcon,
   MaximizeIcon,
-  SettingsIcon
+  SettingsIcon,
+  PiPIcon
 } from './Icons';
 
 export default function Player({
@@ -38,6 +39,10 @@ export default function Player({
   const [isLoading, setIsLoading] = useState(true);
   const [currentEmbedUrl, setCurrentEmbedUrl] = useState(embedUrl);
   const [retryKey, setRetryKey] = useState(0);
+  // True only when a direct stream actually failed (not just "not loaded yet")
+  const streamFailedRef = useRef(false);
+  // Set when switching quality: { t, playing } to resume after src swap
+  const resumeTimeRef = useRef(null);
 
   useEffect(() => {
     setCurrentEmbedUrl(embedUrl);
@@ -60,8 +65,26 @@ export default function Player({
     setRetryKey(k => k + 1);
   };
 
-  // Available stream source URL
-  const activeStreamUrl = hlsUrl || (streams?.length ? streams[0]?.url : null);
+  // Available stream source URL — respects the selected mp4 quality.
+  // streams: [{ quality: '1080'|'720'|'480'|'240', url }] from /api/stream
+  const streamList = Array.isArray(streams) ? streams : [];
+  const [activeQuality, setActiveQuality] = useState(null);
+
+  const pickDefaultQuality = list => {
+    if (!list.length) return null;
+    return (
+      list.find(s => s.quality === '720')?.quality ||
+      list.find(s => ['480', '240'].includes(s.quality))?.quality ||
+      list[0].quality
+    );
+  };
+
+  const activeStreamUrl =
+    hlsUrl ||
+    (streamList.length
+      ? (streamList.find(s => s.quality === (activeQuality || pickDefaultQuality(streamList)))?.url ||
+         streamList[0]?.url)
+      : null);
 
   // Initialize HLS / HTML5 Video
   useEffect(() => {
@@ -69,10 +92,16 @@ export default function Player({
     if (!video) return;
 
     if (!activeStreamUrl) {
-      if (embedUrl) setUseEmbed(true);
+      // No direct stream (yet) — fall back to embed only if streams failed,
+      // not while they're still loading (they arrive async via /api/stream).
+      if (embedUrl && streamFailedRef.current) setUseEmbed(true);
       setIsLoading(false);
       return;
     }
+
+    // Direct stream available — prefer our own player over the embed,
+    // unless a stream already errored out.
+    if (!streamFailedRef.current) setUseEmbed(false);
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -116,6 +145,7 @@ export default function Player({
               break;
             default:
               hls.destroy();
+              streamFailedRef.current = true;
               if (embedUrl) setUseEmbed(true);
               break;
           }
@@ -126,12 +156,25 @@ export default function Player({
       video.src = activeStreamUrl;
       video.addEventListener('loadedmetadata', () => setIsLoading(false));
       video.addEventListener('error', () => {
+        streamFailedRef.current = true;
         if (embedUrl) setUseEmbed(true);
       });
     } else {
       video.src = activeStreamUrl;
+      // Resume position after a quality switch
+      if (resumeTimeRef.current) {
+        const { t, playing } = resumeTimeRef.current;
+        resumeTimeRef.current = null;
+        const onReady = () => {
+          try { video.currentTime = Math.min(t, video.duration || t); } catch {}
+          if (playing) video.play().catch(() => {});
+          video.removeEventListener('canplay', onReady);
+        };
+        video.addEventListener('canplay', onReady);
+      }
       video.addEventListener('loadedmetadata', () => setIsLoading(false));
       video.addEventListener('error', () => {
+        streamFailedRef.current = true;
         if (embedUrl) setUseEmbed(true);
       });
     }
@@ -219,10 +262,10 @@ export default function Player({
   };
 
   const changeQuality = q => {
-    setCurrentQuality(q);
     setShowSettings(false);
 
     if (hlsRef.current) {
+      setCurrentQuality(q);
       const hls = hlsRef.current;
       if (q === 'Auto') {
         hls.currentLevel = -1;
@@ -231,6 +274,18 @@ export default function Player({
         const index = hls.levels.findIndex(l => l.height === height);
         if (index !== -1) hls.currentLevel = index;
       }
+      return;
+    }
+
+    // Direct mp4 streams: just switch the active quality; the init effect
+    // below swaps video.src and resumes from the saved position.
+    const target = streamList.find(s => s.quality === q.replace('p', ''));
+    if (target && videoRef.current) {
+      const video = videoRef.current;
+      resumeTimeRef.current = { t: video.currentTime || 0, playing: !video.paused };
+      setActiveQuality(target.quality);
+      setCurrentQuality(`${target.quality}p`);
+      setIsLoading(true);
     }
   };
 
@@ -293,8 +348,22 @@ export default function Player({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const qualities = ['1080p', '720p', '480p', '240p', 'Auto'];
+  const qualities = streamList.length
+    ? streamList.map(s => `${s.quality}p`)
+    : ['1080p', '720p', '480p', '240p', 'Auto'];
   const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+  const togglePiP = async () => {
+    try {
+      const video = videoRef.current;
+      if (!video) return;
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (video.requestPictureInPicture) {
+        await video.requestPictureInPicture();
+      }
+    } catch {}
+  };
 
   return (
     <div
@@ -404,7 +473,7 @@ export default function Player({
 
                     {showSettings && (
                       <div className="player-settings-dropdown">
-                        {Boolean(hlsUrl) && (
+                        {(Boolean(hlsUrl) || streamList.length > 1) && (
                           <div className="settings-section">
                             <div className="settings-label">Quality</div>
                             <div className="settings-options">
@@ -449,6 +518,16 @@ export default function Player({
                     title="Theater mode"
                   >
                     <span className="theater-icon-box" />
+                  </button>
+                )}
+
+                {Boolean(activeStreamUrl) && !useEmbed && (
+                  <button
+                    onClick={togglePiP}
+                    className="player-btn"
+                    title="Picture in picture"
+                  >
+                    <PiPIcon size={19} />
                   </button>
                 )}
 

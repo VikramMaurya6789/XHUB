@@ -42,6 +42,8 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
 
+  const [streams, setStreams] = useState([]);
+
   useEffect(() => {
     if (!initialVideo && !initialError && vkey) {
       setLoading(true);
@@ -62,8 +64,22 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
           setError(err.message || 'Video not found or streaming unavailable');
           setLoading(false);
         });
+
+      // Direct mp4 streams for our own custom player (fallback: embed iframe)
+      fetch(`/api/stream?vkey=${encodeURIComponent(vkey)}`)
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => {
+          if (data?.qualities?.length) setStreams(data.qualities);
+        })
+        .catch(() => {});
     } else if (initialVideo) {
       syncLocalStorage(initialVideo);
+      fetch(`/api/stream?vkey=${encodeURIComponent(vkey)}`)
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => {
+          if (data?.qualities?.length) setStreams(data.qualities);
+        })
+        .catch(() => {});
     }
   }, [vkey, initialVideo, initialError]);
 
@@ -249,6 +265,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
         <div className="watch-col-primary">
           <Player
             hlsUrl={video.hls}
+            streams={streams}
             embedUrl={video.embed_url}
             poster={video.thumb}
             title={video.title}
