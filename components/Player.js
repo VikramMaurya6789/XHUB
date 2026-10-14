@@ -43,6 +43,11 @@ export default function Player({
   const streamFailedRef = useRef(false);
   // Set when switching quality: { t, playing } to resume after src swap
   const resumeTimeRef = useRef(null);
+  // Background preloader for instant quality switches
+  const preloadRef = useRef(null);
+  const [qualitySwitching, setQualitySwitching] = useState(null);
+  const qualitySwitchingRef = useRef(null);
+  qualitySwitchingRef.current = qualitySwitching;
 
   useEffect(() => {
     setCurrentEmbedUrl(embedUrl);
@@ -277,15 +282,49 @@ export default function Player({
       return;
     }
 
-    // Direct mp4 streams: just switch the active quality; the init effect
-    // below swaps video.src and resumes from the saved position.
+    // Direct mp4 streams: preload the new quality in the background, then
+    // swap instantly (browser cache makes the swap near-immediate).
+    // The old quality keeps playing until the new one is ready.
     const target = streamList.find(s => s.quality === q.replace('p', ''));
-    if (target && videoRef.current) {
-      const video = videoRef.current;
+    if (!target || !videoRef.current) return;
+    const currentQ = activeQuality || pickDefaultQuality(streamList);
+    if (target.quality === currentQ) return; // already on this quality
+
+    const video = videoRef.current;
+    // Instant UI feedback
+    setCurrentQuality(`${target.quality}p`);
+    setQualitySwitching(target.quality);
+
+    const doSwap = () => {
       resumeTimeRef.current = { t: video.currentTime || 0, playing: !video.paused };
       setActiveQuality(target.quality);
-      setCurrentQuality(`${target.quality}p`);
-      setIsLoading(true);
+      setQualitySwitching(null);
+    };
+
+    // Preload in a hidden video element so the swap feels instant
+    try {
+      const pre = preloadRef.current || document.createElement('video');
+      preloadRef.current = pre;
+      pre.preload = 'auto';
+      pre.muted = true;
+      const cleanup = () => {
+        pre.removeEventListener('canplay', onReady);
+        pre.removeEventListener('error', onError);
+        pre.removeAttribute('src');
+        pre.load();
+      };
+      const onReady = () => { cleanup(); doSwap(); };
+      const onError = () => { cleanup(); doSwap(); }; // fallback: swap anyway
+      pre.addEventListener('canplay', onReady);
+      pre.addEventListener('error', onError);
+      pre.src = target.url;
+      pre.load();
+      // Safety: swap anyway after 10s even if preload stalls
+      setTimeout(() => {
+        if (qualitySwitchingRef.current === target.quality) { cleanup(); doSwap(); }
+      }, 10000);
+    } catch {
+      doSwap();
     }
   };
 
@@ -412,6 +451,13 @@ export default function Player({
               <div className="player-big-play-btn">
                 <PlayIcon size={32} />
               </div>
+            </div>
+          )}
+
+          {qualitySwitching && (
+            <div className="player-quality-badge">
+              <span className="player-quality-spinner" />
+              Switching to {qualitySwitching}p…
             </div>
           )}
 
