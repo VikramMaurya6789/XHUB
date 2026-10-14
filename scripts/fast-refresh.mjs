@@ -27,8 +27,9 @@ function fetchPage(id) {
 }
 
 function extractToken(html) {
-  const m = html.match(/(?:\\\\?\/)media(?:\\\\?\/)mp4\?s=([A-Za-z0-9+/=_-]+)/);
-  return m ? '/media/mp4?s=' + m[1] : null;
+  const m = html.match(/"format":"mp4","videoUrl":"([^"]+)"/);
+  if (!m) return null;
+  return m[1].replace(/\\\//g, '/');
 }
 
 async function resolveStreams(id) {
