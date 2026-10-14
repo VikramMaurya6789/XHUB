@@ -14,7 +14,6 @@ import {
 export default function Player({
   hlsUrl,
   streams = [],
-  embedUrl,
   poster,
   title,
   onTheaterToggle,
@@ -35,10 +34,8 @@ export default function Player({
   const [currentQuality, setCurrentQuality] = useState('720p');
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [buffered, setBuffered] = useState(0);
-  const [useEmbed, setUseEmbed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentEmbedUrl, setCurrentEmbedUrl] = useState(embedUrl);
-  const [retryKey, setRetryKey] = useState(0);
+  const [streamError, setStreamError] = useState(false);
   // True only when a direct stream actually failed (not just "not loaded yet")
   const streamFailedRef = useRef(false);
   // Set when switching quality: { t, playing } to resume after src swap
@@ -48,27 +45,6 @@ export default function Player({
   const [qualitySwitching, setQualitySwitching] = useState(null);
   const qualitySwitchingRef = useRef(null);
   qualitySwitchingRef.current = qualitySwitching;
-
-  useEffect(() => {
-    setCurrentEmbedUrl(embedUrl);
-  }, [embedUrl]);
-
-  const handleRetryEmbed = () => {
-    setRetryKey(k => k + 1);
-  };
-
-  const handleToggleSource = () => {
-    setCurrentEmbedUrl(prev => {
-      const url = prev || embedUrl || '';
-      if (url.includes('embed.redtube.net')) {
-        return url.replace('embed.redtube.net', 'embed.redtube.com');
-      } else if (url.includes('embed.redtube.com')) {
-        return url.replace('embed.redtube.com', 'embed.redtube.net');
-      }
-      return url;
-    });
-    setRetryKey(k => k + 1);
-  };
 
   // Available stream source URL — respects the selected mp4 quality.
   // streams: [{ quality: '1080'|'720'|'480'|'240', url }] from /api/stream
@@ -97,16 +73,14 @@ export default function Player({
     if (!video) return;
 
     if (!activeStreamUrl) {
-      // No direct stream (yet) — fall back to embed only if streams failed,
-      // not while they're still loading (they arrive async via /api/stream).
-      if (embedUrl && streamFailedRef.current) setUseEmbed(true);
+      // No direct stream (yet) — show loading; streams arrive async via /api/stream.
+      // If they already failed, show the error state (no third-party iframe).
+      if (streamFailedRef.current) setStreamError(true);
       setIsLoading(false);
       return;
     }
 
-    // Direct stream available — prefer our own player over the embed,
-    // unless a stream already errored out.
-    if (!streamFailedRef.current) setUseEmbed(false);
+    setStreamError(false);
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -151,7 +125,7 @@ export default function Player({
             default:
               hls.destroy();
               streamFailedRef.current = true;
-              if (embedUrl) setUseEmbed(true);
+              setStreamError(true);
               break;
           }
         }
@@ -162,7 +136,7 @@ export default function Player({
       video.addEventListener('loadedmetadata', () => setIsLoading(false));
       video.addEventListener('error', () => {
         streamFailedRef.current = true;
-        if (embedUrl) setUseEmbed(true);
+        setStreamError(true);
       });
     } else {
       video.src = activeStreamUrl;
@@ -180,7 +154,7 @@ export default function Player({
       video.addEventListener('loadedmetadata', () => setIsLoading(false));
       video.addEventListener('error', () => {
         streamFailedRef.current = true;
-        if (embedUrl) setUseEmbed(true);
+        setStreamError(true);
       });
     }
 
@@ -190,7 +164,7 @@ export default function Player({
         hlsRef.current = null;
       }
     };
-  }, [activeStreamUrl, embedUrl]);
+  }, [activeStreamUrl]);
 
   // Controls auto-hide
   const triggerControls = () => {
@@ -411,25 +385,15 @@ export default function Player({
       onMouseMove={triggerControls}
       onTouchStart={triggerControls}
     >
-      {useEmbed || !activeStreamUrl ? (
-        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-          <iframe
-            key={retryKey}
-            src={currentEmbedUrl ? `${currentEmbedUrl}${currentEmbedUrl.includes('?') ? '&' : '?'}cb=${retryKey}` : ''}
-            title={title || 'XHUB Stream'}
-            className="player-iframe"
-            allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          />
-          <div className="player-recovery-bar">
-            <span>Playback issue?</span>
-            <button type="button" onClick={handleRetryEmbed} className="player-recovery-btn">
-              ↻ Reload Player
-            </button>
-            <button type="button" onClick={handleToggleSource} className="player-recovery-btn secondary">
-              ⇄ Switch Mirror ({currentEmbedUrl?.includes('redtube.net') ? '.net → .com' : '.com → .net'})
-            </button>
-          </div>
+      {streamError || (!activeStreamUrl && streamFailedRef.current) ? (
+        <div className="player-error-state">
+          <div className="player-error-icon">⚠</div>
+          <div className="player-error-title">Stream unavailable</div>
+          <div className="player-error-text">This video could not be loaded right now. Please try again later.</div>
+        </div>
+      ) : !activeStreamUrl ? (
+        <div className="player-loading-state">
+          <div className="player-quality-spinner" style={{ width: 32, height: 32 }} />
         </div>
       ) : (
         <>
@@ -507,7 +471,7 @@ export default function Player({
 
               <div className="player-controls-right">
                 {/* Settings menu toggle - only show if there are functional controls */}
-                {(Boolean(hlsUrl) || (Boolean(activeStreamUrl) && !useEmbed)) && (
+                {(Boolean(hlsUrl) || Boolean(activeStreamUrl)) && (
                   <div className="player-settings-wrap">
                     <button
                       onClick={() => setShowSettings(!showSettings)}
@@ -536,7 +500,7 @@ export default function Player({
                           </div>
                         )}
 
-                        {Boolean(activeStreamUrl) && !useEmbed && (
+                        {Boolean(activeStreamUrl) && (
                           <div className="settings-section">
                             <div className="settings-label">Speed</div>
                             <div className="settings-options">
@@ -567,7 +531,7 @@ export default function Player({
                   </button>
                 )}
 
-                {Boolean(activeStreamUrl) && !useEmbed && (
+                {Boolean(activeStreamUrl) && (
                   <button
                     onClick={togglePiP}
                     className="player-btn"

@@ -25,6 +25,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const THUMBS_FILE = path.join(ROOT, 'public', 'thumbs.json');
 const STREAMS_FILE = path.join(ROOT, 'public', 'streams.json');
+const HD1080_FILE = path.join(ROOT, 'public', 'hd1080.json');
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 const API = 'https://api.redtube.com/';
@@ -101,11 +102,15 @@ async function feedIds() {
   const ids = new Set();
   const targets = [
     { search: 'hot', ordering: 'mostviewed', page: 1 }, { search: 'hot', ordering: 'mostviewed', page: 2 },
-    { ordering: 'newest', page: 1 },
-    { search: 'popular', ordering: 'rating', page: 1 },
-    { search: 'best', ordering: 'rating', page: 1 },
+    { search: 'hot', ordering: 'mostviewed', page: 3 }, { search: 'hot', ordering: 'mostviewed', page: 4 },
+    { ordering: 'newest', page: 1 }, { ordering: 'newest', page: 2 },
+    { search: 'popular', ordering: 'rating', page: 1 }, { search: 'popular', ordering: 'rating', page: 2 },
+    { search: 'best', ordering: 'rating', page: 1 }, { search: 'best', ordering: 'rating', page: 2 },
     { category: 'indian', ordering: 'mostviewed', page: 1 }, { category: 'indian', ordering: 'mostviewed', page: 2 },
+    { category: 'indian', ordering: 'mostviewed', page: 3 },
     { search: 'short vertical', ordering: 'mostviewed', page: 1 },
+    { category: 'Amateur', ordering: 'mostviewed', page: 1 }, { category: 'MILF', ordering: 'mostviewed', page: 1 },
+    { category: 'Teen', ordering: 'mostviewed', page: 1 }, { category: 'Asian', ordering: 'mostviewed', page: 1 },
   ];
   for (const t of targets) {
     try {
@@ -128,6 +133,7 @@ async function feedIds() {
 async function main() {
   const thumbs = load(THUMBS_FILE);
   const streams = load(STREAMS_FILE);
+  const hd1080 = load(HD1080_FILE);
   const now = Date.now();
   const ids = await feedIds();
   console.log(`feed videos: ${ids.length}`);
@@ -160,11 +166,18 @@ async function main() {
 
   fs.writeFileSync(THUMBS_FILE, JSON.stringify(thumbs));
   fs.writeFileSync(STREAMS_FILE, JSON.stringify(streams));
+  // Rebuild the 1080p allowlist from all resolved streams
+  const hd = {};
+  for (const [id, e] of Object.entries(streams)) {
+    if (e.qualities?.some(q => q.quality === '1080')) hd[id] = 1;
+  }
+  fs.writeFileSync(HD1080_FILE, JSON.stringify(hd));
   console.log(`thumbs: +${tNew} fail:${tFail} total:${Object.keys(thumbs).length}`);
   console.log(`streams: +${sNew} fail:${sFail} total:${Object.keys(streams).length}`);
+  console.log(`hd1080: total:${Object.keys(hd).length}`);
 
   if (PUSH) {
-    const st = execSync('git status --porcelain public/thumbs.json public/streams.json', { cwd: ROOT, encoding: 'utf8' }).trim();
+    const st = execSync('git status --porcelain public/thumbs.json public/streams.json public/hd1080.json', { cwd: ROOT, encoding: 'utf8' }).trim();
     if (!st) { console.log('no changes to push'); return; }
     const out = execSync(
       `python3 ${GH} push --repo ${REPO} --message "media sync: thumbs+streams (${Object.keys(streams).length} streams)" --dir ${ROOT} --auto`,

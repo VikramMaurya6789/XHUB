@@ -266,7 +266,6 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
           <Player
             hlsUrl={video.hls}
             streams={streams}
-            embedUrl={video.embed_url}
             poster={video.thumb}
             title={video.title}
             isTheater={isTheater}
