@@ -76,7 +76,7 @@ async function main() {
     const results = await Promise.all(chunk.map(async id => {
       const q = await resolveStreams(id);
       if (!q) return null;
-      if (!q.some(x => x.quality === '1080')) return null;
+      if (!q.some(x => x.quality === '1080' || x.quality === '720')) return null;
       return { id, q };
     }));
     for (const r of results) {
