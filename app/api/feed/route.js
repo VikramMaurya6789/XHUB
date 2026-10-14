@@ -9,6 +9,6 @@ export async function GET(req) {
     const videos = await getFeed(section, page);
     return NextResponse.json({ videos, section, page });
   } catch (e) {
-    return NextResponse.json({ error: e.message, videos: [] }, { status: 500 });
+    return NextResponse.json({ error: e.message, stack: e.stack?.slice(0, 500), videos: [] }, { status: 500 });
   }
 }
