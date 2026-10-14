@@ -1,203 +1,250 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import AgeGate from '@/components/AgeGate';
+import VideoCard from '@/components/VideoCard';
+import {
+  FlameIcon,
+  SparklesIcon,
+  StarIcon,
+  UserIcon,
+  ChevronRightIcon,
+  FilmIcon
+} from '@/components/Icons';
+import { POPULAR_CATEGORIES, SPOTLIGHT_CREATORS } from '@/lib/videos';
 
-function VideoCard({ v }) {
-  return (
-    <Link href={`/watch?id=${v.id}`} className="video-card">
-      <div className="video-thumb-wrap">
-        <img
-          src={v.thumb}
-          alt={v.title}
-          className="video-thumb-img"
-          loading="lazy"
-        />
-        {v.duration && <span className="duration-pill">{v.duration}</span>}
-        {v.rating && (
-          <span className="rating-badge">
-            <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-            {v.rating}%
-          </span>
-        )}
-        <div className="play-hover-overlay">
-          <div className="play-circle">
-            <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-      <div className="video-info">
-        <h3 className="video-title" title={v.title}>
-          {v.title}
-        </h3>
-        <div className="video-meta">
-          <span>{v.views} views</span>
-          {v.publishDate && <span>{v.publishDate.split(' ')[0]}</span>}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-export default function Home() {
-  const router = useRouter();
-  const [videos, setVideos] = useState([]);
-  const [section, setSection] = useState('hot');
-  const [page, setPage] = useState(1);
+export default function HomePage() {
+  const [featuredVideos, setFeaturedVideos] = useState([]);
+  const [trendingVideos, setTrendingVideos] = useState([]);
+  const [newVideos, setNewVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const fetchVideos = (sec, p = 1, append = false) => {
-    if (append) setLoadingMore(true);
-    else setLoading(true);
-
-    fetch(`/api/feed?section=${sec}&page=${p}`)
-      .then(r => r.json())
-      .then(d => {
-        const items = d.videos || [];
-        setVideos(prev => (append ? [...prev, ...items] : items));
-        setLoading(false);
-        setLoadingMore(false);
-      })
-      .catch(() => {
-        setLoading(false);
-        setLoadingMore(false);
-      });
-  };
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    setPage(1);
-    fetchVideos(section, 1, false);
-  }, [section]);
+    async function loadInitialData() {
+      setLoading(true);
+      try {
+        const [hotRes, trendRes, newRes] = await Promise.all([
+          fetch('/api/feed?section=hot&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
+          fetch('/api/feed?section=trending&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
+          fetch('/api/feed?section=new&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
+        ]);
 
-  const loadMore = () => {
+        setFeaturedVideos((hotRes.videos || []).slice(0, 5));
+        setTrendingVideos(trendRes.videos || []);
+        setNewVideos((newRes.videos || []).slice(0, 10));
+      } catch (err) {
+        console.error('Failed to load initial feeds:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadInitialData();
+  }, []);
+
+  const handleLoadMoreTrending = async () => {
+    setLoadingMore(true);
     const nextPage = page + 1;
-    setPage(nextPage);
-    fetchVideos(section, nextPage, true);
-  };
-
-  const handleSearch = e => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    try {
+      const res = await fetch(`/api/feed?section=trending&page=${nextPage}`);
+      const data = await res.json();
+      if (data.videos && data.videos.length > 0) {
+        setTrendingVideos(prev => [...prev, ...data.videos]);
+        setPage(nextPage);
+      }
+    } catch (err) {
+      console.error('Error loading more:', err);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
-  const tabs = [
-    { id: 'hot', label: '🔥 Hot' },
-    { id: 'trending', label: '⭐ Top Rated' },
-    { id: 'new', label: '✨ Newest' }
-  ];
-
   return (
-    <div>
-      <header className="site-header">
-        <div className="header-container">
-          <Link href="/" className="logo-brand">
-            <span className="logo-badge">X</span>
-            <span>HUB</span>
-          </Link>
+    <>
+      <AgeGate />
+      <Header />
 
-          <form onSubmit={handleSearch} className="search-form">
-            <svg
-              className="search-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search hundreds of thousands of videos..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
-              <button type="submit" className="search-btn-icon" aria-label="Search">
-                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            )}
-          </form>
+      <main className="page-wrapper">
+        {/* Section 1: Featured / Hot strip (§5.3) */}
+        <section className="homepage-section">
+          <div className="section-header-row">
+            <h2 className="section-heading">
+              <FlameIcon className="section-heading-icon" size={20} />
+              <span>Featured & Hot Videos</span>
+            </h2>
+            <Link href="/best" className="section-view-all">
+              <span>View all hot</span>
+              <ChevronRightIcon size={16} />
+            </Link>
+          </div>
 
-          <nav className="nav-tabs">
-            {tabs.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setSection(t.id)}
-                className={`nav-tab ${section === t.id ? 'active' : ''}`}
+          <div className="dense-video-grid">
+            {loading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="video-card-item">
+                    <div className="card-thumb-container skeleton-box" />
+                    <div style={{ marginTop: '0.65rem' }}>
+                      <div className="skeleton-box" style={{ height: '16px', width: '90%', marginBottom: '6px' }} />
+                      <div className="skeleton-box" style={{ height: '12px', width: '50%' }} />
+                    </div>
+                  </div>
+                ))
+              : featuredVideos.map(video => (
+                  <VideoCard key={video.vkey || video.id} video={video} priority={true} />
+                ))}
+          </div>
+        </section>
+
+        {/* Section 2: Category chips quick-jump row (§5.3) */}
+        <section className="homepage-section" style={{ marginTop: '2rem' }}>
+          <div className="section-header-row">
+            <h2 className="section-heading">
+              <FilmIcon className="section-heading-icon" size={18} />
+              <span>Popular Categories</span>
+            </h2>
+            <Link href="/categories" className="section-view-all">
+              <span>All 150+ categories</span>
+              <ChevronRightIcon size={16} />
+            </Link>
+          </div>
+
+          <div className="category-chips-scroll">
+            {POPULAR_CATEGORIES.map(cat => (
+              <Link
+                key={cat.slug}
+                href={`/categories/${cat.slug}`}
+                className="category-chip"
               >
-                {t.label}
-              </button>
+                <span>{cat.name}</span>
+                <span className="category-chip-count">{cat.count}</span>
+              </Link>
             ))}
-          </nav>
-        </div>
-      </header>
+          </div>
+        </section>
 
-      <main className="main-content">
-        <div className="section-banner">
-          <h2 className="section-title">
-            <span className="section-title-icon">
-              {section === 'hot' ? '🔥' : section === 'trending' ? '⭐' : '✨'}
-            </span>
-            {section === 'hot'
-              ? 'Most Popular Videos'
-              : section === 'trending'
-              ? 'Top Rated Videos'
-              : 'Recently Added Videos'}
-          </h2>
-        </div>
+        {/* Section 3: Creators spotlight row (§5.3 & §5.8) */}
+        <section className="homepage-section">
+          <div className="section-header-row">
+            <h2 className="section-heading">
+              <UserIcon className="section-heading-icon" size={18} />
+              <span>Spotlight Creators & Channels</span>
+            </h2>
+            <Link href="/creators" className="section-view-all">
+              <span>Explore all creators</span>
+              <ChevronRightIcon size={16} />
+            </Link>
+          </div>
 
-        {loading ? (
-          <div className="video-grid">
-            {[...Array(12)].map((_, i) => (
-              <div key={i} className="skeleton-card">
-                <div className="skeleton-thumb" />
-                <div className="skeleton-body">
-                  <div className="skeleton-line" />
-                  <div className="skeleton-line short" />
+          <div className="creators-spotlight-row">
+            {SPOTLIGHT_CREATORS.map(creator => (
+              <Link
+                key={creator.slug}
+                href={`/creators/${creator.slug}`}
+                className="creator-spotlight-card"
+              >
+                <img
+                  src={creator.avatar}
+                  alt={creator.name}
+                  className="creator-avatar"
+                  loading="lazy"
+                />
+                <div>
+                  <div className="creator-meta-name">
+                    <span>{creator.name}</span>
+                  </div>
+                  <div className="creator-sub-count">
+                    {creator.subscribers} subscribers • {creator.videos} videos
+                  </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
-        ) : videos.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '5rem 1rem' }}>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>No videos found</h3>
-            <p style={{ color: 'var(--text-muted)' }}>Try choosing another category or refreshing.</p>
-          </div>
-        ) : (
-          <>
-            <div className="video-grid">
-              {videos.map(v => (
-                <VideoCard key={v.id} v={v} />
-              ))}
-            </div>
+        </section>
 
-            <div className="load-more-container">
-              <button
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="load-more-btn"
-              >
-                {loadingMore ? 'Loading More...' : 'Load More Videos'}
-              </button>
-            </div>
-          </>
-        )}
+        {/* Section 4: Recommended / Trending dense 5-col grid (§5.3) */}
+        <section className="homepage-section" style={{ marginTop: '2.5rem' }}>
+          <div className="section-header-row">
+            <h2 className="section-heading">
+              <StarIcon className="section-heading-icon" size={19} filled={true} />
+              <span>Recommended Trending Videos</span>
+            </h2>
+            <Link href="/best" className="section-view-all">
+              <span>View best list</span>
+              <ChevronRightIcon size={16} />
+            </Link>
+          </div>
+
+          <div className="dense-video-grid">
+            {loading
+              ? Array.from({ length: 15 }).map((_, i) => (
+                  <div key={i} className="video-card-item">
+                    <div className="card-thumb-container skeleton-box" />
+                    <div style={{ marginTop: '0.65rem' }}>
+                      <div className="skeleton-box" style={{ height: '16px', width: '85%', marginBottom: '6px' }} />
+                      <div className="skeleton-box" style={{ height: '12px', width: '45%' }} />
+                    </div>
+                  </div>
+                ))
+              : trendingVideos.map(video => (
+                  <VideoCard key={video.vkey || video.id} video={video} />
+                ))}
+          </div>
+
+          {/* Infinite Scroll / Load More trigger (§5.3) */}
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '2.5rem 0 1rem' }}>
+            <button
+              onClick={handleLoadMoreTrending}
+              disabled={loadingMore}
+              className="filter-pill-btn"
+              style={{
+                padding: '0.8rem 2.2rem',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)'
+              }}
+            >
+              {loadingMore ? 'Loading More Videos...' : 'Load More Videos ↓'}
+            </button>
+          </div>
+        </section>
+
+        {/* Section 5: "New" feed grid (§5.3) */}
+        <section className="homepage-section" style={{ marginTop: '2.5rem' }}>
+          <div className="section-header-row">
+            <h2 className="section-heading">
+              <SparklesIcon className="section-heading-icon" size={19} />
+              <span>Latest New Releases</span>
+            </h2>
+            <Link href="/new" className="section-view-all">
+              <span>All new releases</span>
+              <ChevronRightIcon size={16} />
+            </Link>
+          </div>
+
+          <div className="dense-video-grid">
+            {loading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="video-card-item">
+                    <div className="card-thumb-container skeleton-box" />
+                    <div style={{ marginTop: '0.65rem' }}>
+                      <div className="skeleton-box" style={{ height: '16px', width: '80%', marginBottom: '6px' }} />
+                      <div className="skeleton-box" style={{ height: '12px', width: '50%' }} />
+                    </div>
+                  </div>
+                ))
+              : newVideos.map(video => (
+                  <VideoCard key={video.vkey || video.id} video={video} />
+                ))}
+          </div>
+        </section>
       </main>
-    </div>
+
+      <Footer />
+    </>
   );
 }

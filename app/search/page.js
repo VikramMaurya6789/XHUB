@@ -2,250 +2,246 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import AgeGate from '@/components/AgeGate';
+import VideoCard from '@/components/VideoCard';
+import { SlidersIcon, SearchIcon } from '@/components/Icons';
 
-function VideoCard({ v }) {
-  return (
-    <Link href={`/watch?id=${v.id}`} className="video-card">
-      <div className="video-thumb-wrap">
-        <img
-          src={v.thumb}
-          alt={v.title}
-          className="video-thumb-img"
-          loading="lazy"
-        />
-        {v.duration && <span className="duration-pill">{v.duration}</span>}
-        {v.rating && (
-          <span className="rating-badge">
-            <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-            {v.rating}%
-          </span>
-        )}
-        <div className="play-hover-overlay">
-          <div className="play-circle">
-            <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-      <div className="video-info">
-        <h3 className="video-title" title={v.title}>
-          {v.title}
-        </h3>
-        <div className="video-meta">
-          <span>{v.views} views</span>
-          {v.publishDate && <span>{v.publishDate.split(' ')[0]}</span>}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function SearchContent() {
-  const params = useSearchParams();
+function SearchInner() {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const initialQuery = params.get('q') || '';
-  const [q, setQ] = useState(initialQuery);
+
+  const query = searchParams.get('q') || '';
+  const sortParam = searchParams.get('sort') || 'relevant';
+  const durParam = searchParams.get('dur') || 'all';
+  const qualParam = searchParams.get('quality') || 'all';
+  const pageParam = parseInt(searchParams.get('page') || '1', 10);
+
   const [videos, setVideos] = useState([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(pageParam);
 
-  const doSearch = (query, p = 1, append = false) => {
-    if (!query.trim()) return;
-    if (append) setLoadingMore(true);
-    else setLoading(true);
-
-    fetch(`/api/search?q=${encodeURIComponent(query)}&page=${p}`)
-      .then(r => r.json())
-      .then(d => {
-        const items = d.videos || [];
-        setVideos(prev => (append ? [...prev, ...items] : items));
-        setLoading(false);
-        setLoadingMore(false);
-      })
-      .catch(() => {
-        setLoading(false);
-        setLoadingMore(false);
-      });
+  const updateFilters = (key, value) => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    if (value === 'all' || value === 'relevant') {
+      nextParams.delete(key);
+    } else {
+      nextParams.set(key, value);
+    }
+    nextParams.set('page', '1');
+    router.push(`/search?${nextParams.toString()}`);
   };
 
   useEffect(() => {
-    if (initialQuery) {
-      setQ(initialQuery);
-      setPage(1);
-      doSearch(initialQuery, 1, false);
+    if (!query.trim()) {
+      setVideos([]);
+      setLoading(false);
+      return;
     }
-  }, [initialQuery]);
 
-  const handleSubmit = e => {
-    e.preventDefault();
-    if (q.trim()) {
-      router.push(`/search?q=${encodeURIComponent(q.trim())}`);
-      setPage(1);
-      doSearch(q.trim(), 1, false);
-    }
-  };
-
-  const handleTagClick = tag => {
-    setQ(tag);
-    router.push(`/search?q=${encodeURIComponent(tag)}`);
+    setLoading(true);
     setPage(1);
-    doSearch(tag, 1, false);
-  };
 
-  const loadMore = () => {
+    const params = new URLSearchParams({
+      q: query,
+      page: '1',
+      ...(sortParam !== 'relevant' ? { sort: sortParam } : {}),
+      ...(durParam !== 'all' ? { dur: durParam } : {}),
+      ...(qualParam !== 'all' ? { quality: qualParam } : {}),
+    });
+
+    fetch(`/api/search?${params.toString()}`)
+      .then(res => res.json())
+      .then(data => {
+        setVideos(data.videos || []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setVideos([]);
+        setLoading(false);
+      });
+  }, [query, sortParam, durParam, qualParam]);
+
+  const handleLoadMore = async () => {
+    setLoadingMore(true);
     const nextPage = page + 1;
-    setPage(nextPage);
-    doSearch(q, nextPage, true);
-  };
+    const params = new URLSearchParams({
+      q: query,
+      page: String(nextPage),
+      ...(sortParam !== 'relevant' ? { sort: sortParam } : {}),
+      ...(durParam !== 'all' ? { dur: durParam } : {}),
+      ...(qualParam !== 'all' ? { quality: qualParam } : {}),
+    });
 
-  const popularTags = [
-    'Amateur',
-    'Verified',
-    'Romantic',
-    'Reality',
-    'HD',
-    'Blonde',
-    'Brunette',
-    'College',
-    'Japanese',
-    'POV'
-  ];
+    try {
+      const res = await fetch(`/api/search?${params.toString()}`);
+      const data = await res.json();
+      if (data.videos && data.videos.length > 0) {
+        setVideos(prev => [...prev, ...data.videos]);
+        setPage(nextPage);
+      }
+    } catch {} finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
-    <div>
-      <header className="site-header">
-        <div className="header-container">
-          <Link href="/" className="logo-brand">
-            <span className="logo-badge">X</span>
-            <span>HUB</span>
-          </Link>
+    <main className="page-wrapper">
+      {/* Search Header */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fff' }}>
+          {query ? `Results for "${query}"` : 'Search High-Performance Videos'}
+        </h1>
+        {query && (
+          <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', marginTop: '0.2rem' }}>
+            Showing top video matches across public streaming CDNs
+          </p>
+        )}
+      </div>
 
-          <form onSubmit={handleSubmit} className="search-form">
-            <svg
-              className="search-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search videos, actors, categories..."
-              value={q}
-              onChange={e => setQ(e.target.value)}
-              autoFocus
-            />
-            {q && (
-              <button type="submit" className="search-btn-icon" aria-label="Search">
-                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            )}
-          </form>
-
-          <Link href="/" className="nav-tab">
-            ← Home
-          </Link>
-        </div>
-      </header>
-
-      <main className="main-content">
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-            Popular searches:
-          </div>
-          <div className="tags-container" style={{ marginTop: 0 }}>
-            {popularTags.map(tag => (
+      {/* Filter Bar (PRD §5.6) */}
+      <div className="search-filter-bar">
+        {/* Sort Filter */}
+        <div className="filter-group-wrap">
+          <span className="filter-label">Sort:</span>
+          <div className="filter-pills-row">
+            {[
+              { id: 'relevant', label: 'Most Relevant' },
+              { id: 'mostviewed', label: 'Most Viewed' },
+              { id: 'rating', label: 'Top Rated' },
+              { id: 'newest', label: 'Newest' },
+            ].map(s => (
               <button
+                key={s.id}
+                onClick={() => updateFilters('sort', s.id)}
+                className={`filter-pill-btn ${sortParam === s.id ? 'active' : ''}`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Duration Filter */}
+        <div className="filter-group-wrap">
+          <span className="filter-label">Duration:</span>
+          <div className="filter-pills-row">
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'short', label: 'Short (<10m)' },
+              { id: 'medium', label: 'Medium (10–30m)' },
+              { id: 'long', label: 'Long (>30m)' },
+            ].map(d => (
+              <button
+                key={d.id}
+                onClick={() => updateFilters('dur', d.id)}
+                className={`filter-pill-btn ${durParam === d.id ? 'active' : ''}`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Quality Filter */}
+        <div className="filter-group-wrap">
+          <span className="filter-label">Quality:</span>
+          <div className="filter-pills-row">
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'hd', label: 'HD Only' },
+            ].map(q => (
+              <button
+                key={q.id}
+                onClick={() => updateFilters('quality', q.id)}
+                className={`filter-pill-btn ${qualParam === q.id ? 'active' : ''}`}
+              >
+                {q.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Video Grid */}
+      {loading ? (
+        <div className="dense-video-grid">
+          {Array.from({ length: 15 }).map((_, i) => (
+            <div key={i} className="video-card-item">
+              <div className="card-thumb-container skeleton-box" />
+              <div style={{ marginTop: '0.65rem' }}>
+                <div className="skeleton-box" style={{ height: '16px', width: '85%', marginBottom: '6px' }} />
+                <div className="skeleton-box" style={{ height: '12px', width: '45%' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : videos.length > 0 ? (
+        <>
+          <div className="dense-video-grid">
+            {videos.map(video => (
+              <VideoCard key={video.vkey || video.id} video={video} />
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '2.5rem 0 1rem' }}>
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="filter-pill-btn"
+              style={{
+                padding: '0.8rem 2.2rem',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)'
+              }}
+            >
+              {loadingMore ? 'Loading More Results...' : 'Load More Results ↓'}
+            </button>
+          </div>
+        </>
+      ) : (
+        <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+          <SearchIcon size={48} style={{ color: 'var(--text-3)', marginBottom: '1rem' }} />
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
+            No results — try fewer words.
+          </h2>
+          <p style={{ color: 'var(--text-2)', fontSize: '0.875rem', maxWidth: '420px', margin: '0 auto 1.5rem' }}>
+            We could not find matching videos for "{query}". Try searching general categories or popular creator names.
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {['Amateur', 'POV', 'MILF', 'Blowjob', 'Japanese', 'Anal'].map(tag => (
+              <Link
                 key={tag}
-                onClick={() => handleTagClick(tag)}
-                className={`tag-chip ${q.toLowerCase() === tag.toLowerCase() ? 'active' : ''}`}
-                style={
-                  q.toLowerCase() === tag.toLowerCase()
-                    ? { background: 'var(--accent-primary)', color: '#fff' }
-                    : {}
-                }
+                href={`/search?q=${encodeURIComponent(tag)}`}
+                className="category-chip"
               >
                 {tag}
-              </button>
+              </Link>
             ))}
           </div>
         </div>
-
-        {initialQuery && (
-          <div className="section-banner">
-            <h2 className="section-title">
-              <span>🔍</span>
-              <span>Results for "{initialQuery}"</span>
-            </h2>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="video-grid">
-            {[...Array(12)].map((_, i) => (
-              <div key={i} className="skeleton-card">
-                <div className="skeleton-thumb" />
-                <div className="skeleton-body">
-                  <div className="skeleton-line" />
-                  <div className="skeleton-line short" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : videos.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '5rem 1rem' }}>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
-              {initialQuery ? `No videos found for "${initialQuery}"` : 'Search for any video or category'}
-            </h3>
-            <p style={{ color: 'var(--text-muted)' }}>
-              Try entering different keywords or select one of the popular categories above.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="video-grid">
-              {videos.map(v => (
-                <VideoCard key={v.id} v={v} />
-              ))}
-            </div>
-
-            <div className="load-more-container">
-              <button
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="load-more-btn"
-              >
-                {loadingMore ? 'Loading More...' : 'Load More Results'}
-              </button>
-            </div>
-          </>
-        )}
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
 
-export default function Search() {
+export default function SearchPage() {
   return (
-    <Suspense
-      fallback={
-        <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }} />
-      }
-    >
-      <SearchContent />
-    </Suspense>
+    <>
+      <AgeGate />
+      <Header />
+      <Suspense fallback={
+        <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="skeleton-box" style={{ width: '120px', height: '24px' }} />
+        </div>
+      }>
+        <SearchInner />
+      </Suspense>
+      <Footer />
+    </>
   );
 }

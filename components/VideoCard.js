@@ -1,0 +1,141 @@
+'use client';
+import { useState, useRef } from 'react';
+import Link from 'next/link';
+import { BadgeCheckIcon, StarIcon, ClockIcon, PlayIcon, CheckIcon } from './Icons';
+
+export default function VideoCard({ video, priority = false }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const hoverTimeoutRef = useRef(null);
+  const videoRef = useRef(null);
+
+  if (!video) return null;
+
+  const vkey = video.vkey || video.id;
+  const watchUrl = `/watch/${encodeURIComponent(vkey)}`;
+
+  const handleMouseEnter = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(true);
+      if (videoRef.current) {
+        videoRef.current.play().catch(() => {});
+      }
+    }, 250);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    setIsHovered(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  const handleToggleWatchLater = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const stored = JSON.parse(localStorage.getItem('xhub_watch_later') || '[]');
+      const exists = stored.some(item => (item.vkey || item.id) === vkey);
+      let updated;
+      if (exists) {
+        updated = stored.filter(item => (item.vkey || item.id) !== vkey);
+        setIsSaved(false);
+      } else {
+        updated = [video, ...stored];
+        setIsSaved(true);
+      }
+      localStorage.setItem('xhub_watch_later', JSON.stringify(updated));
+    } catch {}
+  };
+
+  const hasPreview = Boolean(video.previewVideo || video.previewFallback);
+  const previewSrc = video.previewVideo || video.previewFallback;
+
+  return (
+    <div
+      className="video-card-item"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <Link href={watchUrl} className="video-card-link">
+        <div className="card-thumb-container">
+          <img
+            src={video.thumb}
+            alt={video.title}
+            className={`card-thumbnail ${isHovered && hasPreview ? 'is-faded' : ''}`}
+            loading={priority ? 'eager' : 'lazy'}
+            decoding="async"
+          />
+
+          {isHovered && hasPreview && (
+            <video
+              ref={videoRef}
+              src={previewSrc}
+              muted
+              playsInline
+              loop
+              className="card-preview-video"
+            />
+          )}
+
+          {video.hd !== false && (
+            <span className="card-quality-badge">HD</span>
+          )}
+
+          {video.duration && (
+            <span className="card-duration-badge">{video.duration}</span>
+          )}
+
+          <button
+            onClick={handleToggleWatchLater}
+            className={`card-watch-later-btn ${isSaved ? 'saved' : ''}`}
+            title={isSaved ? 'In Watch Later' : 'Add to Watch Later'}
+            aria-label="Save to Watch Later"
+          >
+            {isSaved ? <CheckIcon size={14} /> : <ClockIcon size={14} />}
+          </button>
+
+          <div className="card-hover-play-btn">
+            <PlayIcon size={20} />
+          </div>
+        </div>
+
+        <div className="card-details">
+          <h3 className="card-title" title={video.title}>
+            {video.title}
+          </h3>
+
+          <div className="card-uploader-row">
+            <span className="card-uploader-name">
+              {video.uploader?.name || 'Verified Creator'}
+            </span>
+            <BadgeCheckIcon size={13} className="verified-badge-icon" />
+            <span className="card-views-count">
+              • {video.views} views
+            </span>
+          </div>
+
+          <div className="card-meta-row">
+            {video.rating != null ? (
+              <span className="card-rating">
+                <StarIcon size={12} filled={true} />
+                <span>{video.rating}%</span>
+              </span>
+            ) : (
+              <span className="card-rating">
+                <StarIcon size={12} filled={true} />
+                <span>94%</span>
+              </span>
+            )}
+            <span className="card-meta-dot">•</span>
+            <span className="card-age">
+              {video.age || '3 days ago'}
+            </span>
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+}

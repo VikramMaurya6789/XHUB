@@ -7,7 +7,15 @@ export async function GET(req) {
     const section = searchParams.get('section') || 'hot';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const videos = await getFeed(section, page);
-    return NextResponse.json({ videos, section, page });
+
+    return NextResponse.json(
+      { videos, section, page },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (e) {
     return NextResponse.json({ error: e.message, stack: e.stack?.slice(0, 500), videos: [] }, { status: 500 });
   }
