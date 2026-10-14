@@ -166,8 +166,9 @@ async function main() {
 
   fs.writeFileSync(THUMBS_FILE, JSON.stringify(thumbs));
   fs.writeFileSync(STREAMS_FILE, JSON.stringify(streams));
-  // Rebuild the 1080p allowlist from all resolved streams
-  const hd = {};
+  // Merge 1080p allowlist: keep existing + add new from streams (never shrink)
+  const existingHd = load(HD1080_FILE);
+  const hd = { ...existingHd };
   for (const [id, e] of Object.entries(streams)) {
     if (e.qualities?.some(q => q.quality === '1080')) hd[id] = 1;
   }
