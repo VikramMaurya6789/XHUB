@@ -23,6 +23,7 @@ export default function Header() {
     { label: 'Short Videos', href: '/shorts' },
     { label: 'Watch Later', href: '/watch-later' },
     { label: 'Watch History', href: '/history' },
+    { label: 'Indian', href: '/indian' },
     { label: 'Categories', href: '/categories' },
     { label: 'Pornstars', href: '/pornstars' },
     { label: 'Celebrities', href: '/celebrities' },

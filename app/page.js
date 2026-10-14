@@ -19,6 +19,7 @@ export default function HomePage() {
   const [featuredVideos, setFeaturedVideos] = useState([]);
   const [trendingVideos, setTrendingVideos] = useState([]);
   const [newVideos, setNewVideos] = useState([]);
+  const [indianVideos, setIndianVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
@@ -27,15 +28,17 @@ export default function HomePage() {
     async function loadInitialData() {
       setLoading(true);
       try {
-        const [hotRes, trendRes, newRes] = await Promise.all([
+        const [hotRes, trendRes, newRes, indianRes] = await Promise.all([
           fetch('/api/feed?section=hot&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
           fetch('/api/feed?section=trending&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
           fetch('/api/feed?section=new&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
+          fetch('/api/feed?section=indian&page=1').then(r => r.json()).catch(() => ({ videos: [] })),
         ]);
 
         setFeaturedVideos((hotRes.videos || []).slice(0, 5));
         setTrendingVideos(trendRes.videos || []);
         setNewVideos((newRes.videos || []).slice(0, 10));
+        setIndianVideos((indianRes.videos || []).slice(0, 10));
       } catch (err) {
         console.error('Failed to load initial feeds:', err);
       } finally {
@@ -238,6 +241,36 @@ export default function HomePage() {
                   </div>
                 ))
               : newVideos.map(video => (
+                  <VideoCard key={video.vkey || video.id} video={video} />
+                ))}
+          </div>
+        </section>
+
+        {/* Section 6: Indian videos strip */}
+        <section className="homepage-section" style={{ marginTop: '2.5rem' }}>
+          <div className="section-header-row">
+            <h2 className="section-heading">
+              <FlameIcon className="section-heading-icon" size={19} />
+              <span>Indian Videos</span>
+            </h2>
+            <Link href="/indian" className="section-view-all">
+              <span>All Indian videos</span>
+              <ChevronRightIcon size={16} />
+            </Link>
+          </div>
+
+          <div className="dense-video-grid">
+            {loading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="video-card-item">
+                    <div className="card-thumb-container skeleton-box" />
+                    <div style={{ marginTop: '0.65rem' }}>
+                      <div className="skeleton-box" style={{ height: '16px', width: '80%', marginBottom: '6px' }} />
+                      <div className="skeleton-box" style={{ height: '12px', width: '50%' }} />
+                    </div>
+                  </div>
+                ))
+              : indianVideos.map(video => (
                   <VideoCard key={video.vkey || video.id} video={video} />
                 ))}
           </div>

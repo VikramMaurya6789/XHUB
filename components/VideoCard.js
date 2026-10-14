@@ -67,7 +67,32 @@ export default function VideoCard({ video, priority = false }) {
             className={`card-thumbnail ${isHovered && hasPreview ? 'is-faded' : ''}`}
             loading={priority ? 'eager' : 'lazy'}
             decoding="async"
+            onError={e => {
+              // Thumbnail failed (CDN down/blocked) — show branded placeholder
+              // instead of a broken-image icon.
+              e.currentTarget.style.display = 'none';
+              const ph = e.currentTarget.parentElement?.querySelector('.card-thumb-fallback');
+              if (ph) ph.style.display = 'flex';
+            }}
           />
+          <div
+            className="card-thumb-fallback"
+            style={{
+              display: 'none',
+              position: 'absolute',
+              inset: 0,
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(135deg, #1a1a1a 0%, #2a1503 100%)',
+              color: '#ff6b00',
+              fontWeight: 800,
+              fontSize: '1.4rem',
+              letterSpacing: '0.1em',
+            }}
+            aria-hidden="true"
+          >
+            XHUB
+          </div>
 
           {isHovered && hasPreview && (
             <video
