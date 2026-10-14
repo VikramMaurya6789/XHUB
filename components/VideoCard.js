@@ -78,7 +78,13 @@ export default function VideoCard({ video, priority = false }) {
     } catch {}
   };
 
-  const currentDisplayThumb = isHovered && thumbs && thumbs[thumbIndex] ? thumbs[thumbIndex] : video.thumb;
+  const proxyThumbUrl = video.thumb?.startsWith('/api/thumb')
+    ? video.thumb
+    : `/api/thumb?vkey=${encodeURIComponent(vkey)}`;
+
+  const currentDisplayThumb = isHovered && thumbs && thumbs[thumbIndex] && !thumbs[thumbIndex].includes('rdtcdn.com')
+    ? thumbs[thumbIndex]
+    : proxyThumbUrl;
 
   return (
     <div
@@ -98,6 +104,11 @@ export default function VideoCard({ video, priority = false }) {
               loading={priority ? 'eager' : 'lazy'}
               decoding="async"
               onError={e => {
+                const currentSrc = e.currentTarget.getAttribute('src') || '';
+                if (!currentSrc.includes('/api/thumb')) {
+                  e.currentTarget.src = `/api/thumb?vkey=${encodeURIComponent(vkey)}`;
+                  return;
+                }
                 e.currentTarget.style.display = 'none';
                 const ph = e.currentTarget.parentElement?.querySelector('.card-thumb-fallback');
                 if (ph) ph.style.display = 'flex';

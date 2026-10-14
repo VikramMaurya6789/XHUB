@@ -1,13 +1,8 @@
 /**
  * XHUB Thumbnail Sync Engine (A1)
  *
- * Runs locally or as a cron job to resolve working thumbnails from Redtube page HTML.
- * Redtube's API returns dead CDN links (410 Gone), but the page og:image works when
- * fetched with a Referer header.
- *
- * Fetches hot, new, trending, and indian video feeds (pages 1-2), resolves og:image,
- * prunes entries older than 7 days, skips entries resolved < 40 mins ago, and writes
- * public/thumbs.json.
+ * Resolves working 1280x720 og:image thumbnails from Redtube page HTML.
+ * Matches exact feeds fetched by getFeed() on the live site.
  */
 
 import fs from 'fs';
@@ -44,10 +39,19 @@ function extractOgImage(html) {
   return null;
 }
 
-async function fetchVideoIdsFromFeed(category = '', page = 1) {
-  const url = `${REDTUBE_API}?data=redtube.Videos.searchVideos&output=json&thumbsize=all&page=${page}${category ? `&category=${encodeURIComponent(category)}` : ''}`;
+async function fetchVideoIdsFromFeed({ search = '', category = '', ordering = '', page = 1 } = {}) {
+  const params = new URLSearchParams({
+    data: 'redtube.Videos.searchVideos',
+    output: 'json',
+    thumbsize: 'all',
+    page: String(page),
+  });
+  if (search) params.set('search', search);
+  if (category) params.set('category', category);
+  if (ordering) params.set('ordering', ordering);
+
   try {
-    const res = await fetch(url, {
+    const res = await fetch(`${REDTUBE_API}?${params.toString()}`, {
       headers: { 'User-Agent': UA },
     });
     if (!res.ok) return [];
@@ -58,7 +62,7 @@ async function fetchVideoIdsFromFeed(category = '', page = 1) {
       .filter(Boolean)
       .map(String);
   } catch (e) {
-    console.error(`Failed to fetch feed category=${category} page=${page}:`, e.message);
+    console.error(`Failed to fetch feed:`, e.message);
     return [];
   }
 }
@@ -78,6 +82,7 @@ async function resolveVideoThumb(id) {
           'Referer': 'https://www.google.com/',
         },
         redirect: 'follow',
+        signal: AbortSignal.timeout(6000),
       });
       if (!res.ok) continue;
       const html = await res.text();
@@ -87,19 +92,42 @@ async function resolveVideoThumb(id) {
       // try next mirror
     }
   }
+
+  // Fallback to Redtube official API if page scrape fails
+  try {
+    const apiRes = await fetch(`https://api.redtube.com/?data=redtube.Videos.getVideoById&output=json&video_id=${id}&thumbsize=all`, {
+      headers: { 'User-Agent': UA },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (apiRes.ok) {
+      const data = await apiRes.json();
+      const v = data?.video;
+      if (v) {
+        if (Array.isArray(v.thumbs) && v.thumbs.length > 0) {
+          const big = v.thumbs.find(t => t.size === 'big');
+          const med2 = v.thumbs.find(t => t.size === 'medium2');
+          const med1 = v.thumbs.find(t => t.size === 'medium1');
+          const s = (big || med2 || med1 || v.thumbs[0])?.src;
+          if (s) return s;
+        }
+        if (v.default_thumb && v.default_thumb.startsWith('http')) {
+          return v.default_thumb;
+        }
+      }
+    }
+  } catch {}
+
   return null;
 }
 
 async function main() {
   console.log('--- Starting XHUB Thumbnail Sync ---');
 
-  // Ensure public directory exists
   const publicDir = path.dirname(THUMBS_FILE);
   if (!fs.existsSync(publicDir)) {
     fs.mkdirSync(publicDir, { recursive: true });
   }
 
-  // Load existing thumbs.json
   let map = {};
   if (fs.existsSync(THUMBS_FILE)) {
     try {
@@ -124,22 +152,32 @@ async function main() {
     console.log(`Pruned ${pruned} stale entries (> 7 days old)`);
   }
 
-  // Collect video IDs from feeds (hot, new, trending, indian - pages 1 and 2)
-  const feedCategories = [
-    { cat: '', pages: [1, 2] },             // hot / featured
-    { cat: 'Amateur', pages: [1, 2] },       // trending / amateur
-    { cat: 'indian', pages: [1, 2] },        // indian section
-    { cat: 'Blowjob', pages: [1] },
-    { cat: 'MILF', pages: [1] },
-    { cat: 'Teen', pages: [1] },
-    { cat: 'Asian', pages: [1] },
-    { cat: 'Hardcore', pages: [1] },
+  // Exact target feeds matching getFeed() on the live site
+  const feedTargets = [
+    // Hot feed (matching getFeed('hot'))
+    { search: 'hot', ordering: 'mostviewed', pages: [1, 2] },
+    // Trending feed (matching getFeed('trending'))
+    { search: 'popular', ordering: 'rating', pages: [1, 2] },
+    // Best feed (matching getFeed('best'))
+    { search: 'best', ordering: 'rating', pages: [1, 2] },
+    // New feed (matching getFeed('new'))
+    { ordering: 'newest', pages: [1, 2] },
+    // Indian section (matching getFeed('indian'))
+    { category: 'indian', ordering: 'mostviewed', pages: [1, 2, 3] },
+    // Shorts
+    { search: 'short vertical', ordering: 'mostviewed', pages: [1] },
+    // Core categories
+    { category: 'Amateur', ordering: 'mostviewed', pages: [1] },
+    { category: 'MILF', ordering: 'mostviewed', pages: [1] },
+    { category: 'Blowjob', ordering: 'mostviewed', pages: [1] },
+    { category: 'Anal', ordering: 'mostviewed', pages: [1] },
+    { category: 'Asian', ordering: 'mostviewed', pages: [1] },
   ];
 
   const allIds = new Set();
-  for (const { cat, pages } of feedCategories) {
-    for (const page of pages) {
-      const ids = await fetchVideoIdsFromFeed(cat, page);
+  for (const target of feedTargets) {
+    for (const page of target.pages) {
+      const ids = await fetchVideoIdsFromFeed({ ...target, page });
       ids.forEach(id => allIds.add(id));
     }
   }
@@ -165,13 +203,15 @@ async function main() {
       map[id] = { url: imgUrl, ts: now };
       resolved++;
       console.log(`✓ Resolved [${id}] -> ${imgUrl.slice(0, 60)}...`);
+      if (resolved % 15 === 0) {
+        fs.writeFileSync(THUMBS_FILE, JSON.stringify(map, null, 2), 'utf8');
+      }
     } else {
       failed++;
       console.log(`✗ Could not resolve [${id}]`);
     }
 
-    // Gentle pacing to avoid burst rate limits
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 80));
   }
 
   fs.writeFileSync(THUMBS_FILE, JSON.stringify(map, null, 2), 'utf8');
