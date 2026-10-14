@@ -43,6 +43,31 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
   const [copiedEmbed, setCopiedEmbed] = useState(false);
 
   const [streams, setStreams] = useState([]);
+  const [streamsRetrying, setStreamsRetrying] = useState(false);
+
+  // Fetch direct mp4 streams with retry (sync refreshes every 30min).
+  const fetchStreams = (vkey, attempt = 0) => {
+    fetch(`/api/stream?vkey=${encodeURIComponent(vkey)}`)
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data?.qualities?.length) {
+          setStreams(data.qualities);
+          setStreamsRetrying(false);
+        } else if (attempt < 6) {
+          // No streams yet or refreshing — retry in 10s (max 1 min).
+          setStreamsRetrying(true);
+          setTimeout(() => fetchStreams(vkey, attempt + 1), 10000);
+        } else {
+          setStreamsRetrying(false);
+        }
+      })
+      .catch(() => {
+        if (attempt < 6) {
+          setStreamsRetrying(true);
+          setTimeout(() => fetchStreams(vkey, attempt + 1), 10000);
+        }
+      });
+  };
 
   useEffect(() => {
     if (!initialVideo && !initialError && vkey) {
@@ -65,21 +90,11 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
           setLoading(false);
         });
 
-      // Direct mp4 streams for our own custom player (fallback: embed iframe)
-      fetch(`/api/stream?vkey=${encodeURIComponent(vkey)}`)
-        .then(res => (res.ok ? res.json() : null))
-        .then(data => {
-          if (data?.qualities?.length) setStreams(data.qualities);
-        })
-        .catch(() => {});
+      // Direct mp4 streams for our own custom player (with auto-retry)
+      fetchStreams(vkey);
     } else if (initialVideo) {
       syncLocalStorage(initialVideo);
-      fetch(`/api/stream?vkey=${encodeURIComponent(vkey)}`)
-        .then(res => (res.ok ? res.json() : null))
-        .then(data => {
-          if (data?.qualities?.length) setStreams(data.qualities);
-        })
-        .catch(() => {});
+      fetchStreams(vkey);
     }
   }, [vkey, initialVideo, initialError]);
 
@@ -266,6 +281,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
           <Player
             hlsUrl={video.hls}
             streams={streams}
+            streamsRetrying={streamsRetrying}
             poster={video.thumb}
             title={video.title}
             isTheater={isTheater}

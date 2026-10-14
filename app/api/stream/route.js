@@ -22,7 +22,14 @@ export async function GET(req) {
     const map = await res.json();
     const entry = map[id];
     if (!entry?.qualities?.length) {
-      return NextResponse.json({ vkey: id, qualities: [], error: 'no streams yet' }, { status: 404 });
+      return NextResponse.json({ vkey: id, qualities: [], error: 'no streams yet', retry: true }, { status: 404 });
+    }
+
+    // Reject stale streams (URLs valid ~2h; cron refreshes every 30min).
+    // If stale, tell client to retry — the sync will refresh it.
+    const ageMin = (Date.now() - (entry.ts || 0)) / 60000;
+    if (ageMin > 100) {
+      return NextResponse.json({ vkey: id, qualities: [], error: 'streams refreshing', retry: true }, { status: 404 });
     }
 
     // Default: 720p if available, else highest below it, else first.

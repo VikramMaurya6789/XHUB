@@ -14,6 +14,7 @@ import {
 export default function Player({
   hlsUrl,
   streams = [],
+  streamsRetrying = false,
   poster,
   title,
   onTheaterToggle,
@@ -385,7 +386,7 @@ export default function Player({
       onMouseMove={triggerControls}
       onTouchStart={triggerControls}
     >
-      {streamError || (!activeStreamUrl && streamFailedRef.current) ? (
+      {streamError || (!activeStreamUrl && streamFailedRef.current && !streamsRetrying) ? (
         <div className="player-error-state">
           <div className="player-error-icon">⚠</div>
           <div className="player-error-title">Stream unavailable</div>
@@ -394,6 +395,7 @@ export default function Player({
       ) : !activeStreamUrl ? (
         <div className="player-loading-state">
           <div className="player-quality-spinner" style={{ width: 32, height: 32 }} />
+          {streamsRetrying && <div className="player-error-text">Resolving HD stream…</div>}
         </div>
       ) : (
         <>
