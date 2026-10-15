@@ -874,3 +874,8 @@ fatal: expected flush after ref listing
 [2026-10-15T16:06:18.551Z] progress 1400/1400
 [2026-10-15T16:06:33.533Z] push ok: https://github.com/VikramMaurya6789/XHUB/commit/734ce3cfec02454b0bab83cfef5a92e36d757fe5
 [2026-10-15T16:06:33.534Z] done in 899s: 1156 streams (shard 1/2)
+[2026-10-15T16:11:07.909Z] progress 300/377
+[2026-10-15T16:11:09.459Z] worker shard 1/2 batch: 1400 videos (0 pending, 23378 stale available)
+[2026-10-15T16:11:28.677Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 656 streams, 662 thumbs (25591 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-15T16:11:28.677Z] done in 234s: 656 streams, 662 thumbs
+[2026-10-15T16:11:43.349Z] progress 100/1400
