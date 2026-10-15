@@ -292,6 +292,13 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
             title={video.title}
             isTheater={isTheater}
             onTheaterToggle={() => setIsTheater(!isTheater)}
+            onStreamError={() => {
+              // Video element failed (e.g., token expired mid-playback).
+              // Re-fetch streams after 15s — the batch refreshes every 10 min,
+              // so fresh tokens are usually available on retry.
+              setStreamsRetrying(true);
+              setTimeout(() => fetchStreams(vkey), 15000);
+            }}
           />
 
           {/* Title Header */}
