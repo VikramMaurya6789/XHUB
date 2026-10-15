@@ -27,6 +27,72 @@ function hostAllowed(url) {
   }
 }
 
+/**
+ * Parse "bytes=start-end" / "bytes=start-" against a known total.
+ * Returns {start, end} or null if unparseable/out of range.
+ */
+function parseRange(rangeHeader, total) {
+  const m = /^bytes=(\d+)-(\d*)$/.exec((rangeHeader || '').trim());
+  if (!m || !total) return null;
+  const start = parseInt(m[1], 10);
+  let end = m[2] ? parseInt(m[2], 10) : total - 1;
+  if (isNaN(start) || start < 0 || start >= total) return null;
+  if (isNaN(end) || end >= total) end = total - 1;
+  if (end < start) return null;
+  return { start, end };
+}
+
+/**
+ * Some Redtube CDN hosts (ev-ph.rdtcdn.com) IGNORE Range and answer 200 with
+ * the full body. The browser's media element asked for a slice and stalls when
+ * it gets 200 instead of 206 — seeking then kills playback entirely.
+ * Emulate 206 server-side: skip upstream bytes until `start`, then serve only
+ * [start, end] with a proper Content-Range.
+ */
+function emulatePartial(upstreamBody, start, end, contentType, total) {
+  const length = end - start + 1;
+  const reader = upstreamBody.getReader();
+  let pos = 0; // upstream bytes consumed
+  let sent = 0; // bytes sent to client
+  const stream = new ReadableStream({
+    async pull(controller) {
+      try {
+        while (sent < length) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunkStart = pos;
+          pos += value.length;
+          const s = Math.max(chunkStart, start);
+          const e = Math.min(pos, end + 1);
+          if (e > s) {
+            controller.enqueue(value.subarray(s - chunkStart, e - chunkStart));
+            sent += e - s;
+          }
+        }
+      } catch (err) {
+        controller.error(err);
+        return;
+      }
+      controller.close();
+      try {
+        await reader.cancel();
+      } catch {}
+    },
+    cancel() {
+      try {
+        reader.cancel();
+      } catch {}
+    },
+  });
+  const headers = new Headers();
+  if (contentType) headers.set('Content-Type', contentType);
+  headers.set('Content-Length', String(length));
+  headers.set('Content-Range', `bytes ${start}-${end}/${total}`);
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Cache-Control', 'private, max-age=60');
+  return new NextResponse(stream, { status: 206, headers });
+}
+
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
@@ -63,20 +129,47 @@ export async function GET(req) {
       return new NextResponse('upstream error', { status: 502 });
     }
 
+    // Upstream honored the Range (or none was requested): pass through.
+    if (upstream.status === 206 || !range) {
+      const outHeaders = new Headers();
+      const ct = upstream.headers.get('content-type');
+      if (ct) outHeaders.set('Content-Type', ct);
+      const cl = upstream.headers.get('content-length');
+      if (cl) outHeaders.set('Content-Length', cl);
+      const cr = upstream.headers.get('content-range');
+      if (cr) outHeaders.set('Content-Range', cr);
+      outHeaders.set('Accept-Ranges', 'bytes');
+      outHeaders.set('Cache-Control', 'private, max-age=60');
+
+      return new NextResponse(upstream.body, {
+        status: upstream.status,
+        headers: outHeaders,
+      });
+    }
+
+    // Upstream IGNORED our Range and answered 200 with the full body
+    // (ev-ph.rdtcdn.com does this). Emulate 206 so seeking keeps working.
+    const total = parseInt(upstream.headers.get('content-length') || '0', 10);
+    const r = parseRange(range, total);
+    if (r && upstream.body) {
+      return emulatePartial(
+        upstream.body,
+        r.start,
+        r.end,
+        upstream.headers.get('content-type'),
+        total
+      );
+    }
+
+    // Can't emulate (unknown size / unparseable range): pass the 200 through.
     const outHeaders = new Headers();
     const ct = upstream.headers.get('content-type');
     if (ct) outHeaders.set('Content-Type', ct);
     const cl = upstream.headers.get('content-length');
     if (cl) outHeaders.set('Content-Length', cl);
-    const cr = upstream.headers.get('content-range');
-    if (cr) outHeaders.set('Content-Range', cr);
     outHeaders.set('Accept-Ranges', 'bytes');
     outHeaders.set('Cache-Control', 'private, max-age=60');
-
-    return new NextResponse(upstream.body, {
-      status: upstream.status,
-      headers: outHeaders,
-    });
+    return new NextResponse(upstream.body, { status: 200, headers: outHeaders });
   } catch (e) {
     return new NextResponse('proxy error: ' + e.message, { status: 500 });
   }
