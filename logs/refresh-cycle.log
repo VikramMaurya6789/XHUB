@@ -2628,3 +2628,48 @@ fatal: expected flush after ref listing
 [2026-10-15T21:33:17.079Z] progress 1400/1400
 [2026-10-15T21:33:17.550Z] progress 1400/1400
 [2026-10-15T21:33:21.099Z] progress 1000/1400
+[2026-10-15T21:36:52.612Z] worker shard 1/2 batch: 1400 videos (0 pending, 15029 stale available)
+[2026-10-15T21:37:31.222Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-0: 1027 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-0.json
+[2026-10-15T21:37:31.240Z] done in 1266s: 1027 streams (shard 0/2)
+[2026-10-15T21:37:44.106Z] progress 100/1400
+[2026-10-15T21:37:46.196Z] progress 400/800
+[2026-10-15T21:39:08.405Z] progress 200/1400
+[2026-10-15T21:39:09.265Z] progress 500/800
+[2026-10-15T21:40:07.748Z] progress 600/800
+[2026-10-15T21:40:14.276Z] progress 300/1400
+[2026-10-15T21:41:06.200Z] progress 700/800
+[2026-10-15T21:41:32.238Z] progress 400/1400
+[2026-10-15T21:42:17.392Z] progress 800/800
+[2026-10-15T21:42:17.693Z] progress 800/800
+[2026-10-15T21:42:17.778Z] progress 800/800
+[2026-10-15T21:42:18.502Z] progress 800/800
+[2026-10-15T21:42:20.059Z] progress 800/800
+[2026-10-15T21:42:20.403Z] progress 800/800
+[2026-10-15T21:42:20.829Z] progress 800/800
+[2026-10-15T21:42:23.555Z] progress 800/800
+[2026-10-15T21:42:23.713Z] progress 800/800
+[2026-10-15T21:42:25.165Z] progress 800/800
+[2026-10-15T21:42:27.531Z] progress 800/800
+[2026-10-15T21:42:27.536Z] progress 800/800
+[2026-10-15T21:42:27.536Z] progress 800/800
+[2026-10-15T21:42:29.682Z] progress 800/800
+[2026-10-15T21:42:30.912Z] progress 800/800
+[2026-10-15T21:42:31.122Z] progress 800/800
+[2026-10-15T21:42:31.187Z] progress 800/800
+[2026-10-15T21:42:31.189Z] progress 800/800
+[2026-10-15T21:42:31.191Z] progress 800/800
+[2026-10-15T21:42:31.191Z] progress 800/800
+[2026-10-15T21:42:31.192Z] progress 800/800
+[2026-10-15T21:42:31.196Z] progress 800/800
+[2026-10-15T21:42:31.196Z] progress 800/800
+[2026-10-15T21:42:31.200Z] progress 800/800
+[2026-10-15T21:42:31.200Z] progress 800/800
+[2026-10-15T21:42:31.206Z] progress 800/800
+[2026-10-15T21:42:31.408Z] progress 800/800
+[2026-10-15T21:42:31.409Z] progress 800/800
+[2026-10-15T21:42:32.363Z] progress 500/1400
+[2026-10-15T21:42:32.644Z] progress 800/800
+[2026-10-15T21:42:33.210Z] progress 800/800
+[2026-10-15T21:42:33.210Z] progress 800/800
+[2026-10-15T21:42:33.213Z] progress 800/800
+[2026-10-15T21:42:33.765Z] merged 1893 worker part entries
