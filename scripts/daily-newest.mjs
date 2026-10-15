@@ -121,10 +121,10 @@ async function main() {
     console.log(`Streams refreshed: +${addedStreams}`);
   }
 
-  // Push to GitHub
+  // Push to GitHub (gh.py needs PYTHONPATH: its hard-coded sys.path no longer exists)
   console.log('Pushing to GitHub...');
   execSync(
-    `python3 /home/hatch/workspace/skills/github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "Daily newest videos" --dir ${ROOT} --auto`,
+    `PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/skills/github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "Daily newest videos" --dir ${ROOT} --auto`,
     { cwd: ROOT, stdio: 'inherit', timeout: 10 * 60 * 1000 }
   );
   console.log('DONE: daily newest collection complete');
