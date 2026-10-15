@@ -815,3 +815,15 @@ fatal: expected flush after ref listing
 [2026-10-15T15:47:38.693Z] done in 1045s: 1243 streams (shard 1/2)
 [2026-10-15T15:47:43.995Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-0: 1319 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-0.json
 [2026-10-15T15:47:43.995Z] done in 1072s: 1319 streams (shard 0/2)
+[2026-10-15T15:53:37.545Z] worker shard 0/2 batch: 245 videos (0 pending, 22719 stale available)
+[2026-10-15T15:53:38.939Z] progress 400/800
+[2026-10-15T15:54:20.380Z] progress 100/800
+[2026-10-15T15:54:59.194Z] progress 300/1400
+[2026-10-15T15:55:34.870Z] progress 100/245
+[2026-10-15T15:55:37.108Z] progress 500/800
+[2026-10-15T15:56:15.684Z] progress 400/1400
+[2026-10-15T15:56:45.340Z] progress 600/800
+[2026-10-15T15:57:18.599Z] progress 200/245
+[2026-10-15T15:57:40.524Z] progress 500/1400
+[2026-10-15T15:58:18.693Z] progress 700/800
+[2026-10-15T15:58:37.284Z] progress 600/1400
