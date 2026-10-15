@@ -1631,3 +1631,6 @@ fatal: expected flush after ref listing
 [2026-10-15T18:21:53.799Z] progress 1400/1400
 [2026-10-15T18:22:34.920Z] push ok: https://github.com/VikramMaurya6789/XHUB/commit/b9edff10a3bbf159b21193a3d5f66689704f346f
 [2026-10-15T18:22:34.920Z] done in 494s: 1251 streams (shard 1/2)
+[2026-10-15T18:28:20.820Z] progress 700/1400
+[2026-10-15T18:28:21.031Z] worker shard 0/2 batch: 34 videos (0 pending, 12817 stale available)
+[2026-10-15T18:28:32.095Z] progress 600/800
