@@ -28,69 +28,30 @@ function hostAllowed(url) {
 }
 
 /**
- * Parse "bytes=start-end" / "bytes=start-" against a known total.
- * Returns {start, end} or null if unparseable/out of range.
+ * Some Redtube CDN hosts (ev-ph.rdtcdn.com) IGNORE Range and answer 200 with
+ * the full body. The old emulatePartial downloaded from byte 0 to skip to the
+ * requested offset — for a seek to the middle of a 500MB video that's 250MB
+ * of wasted download and a massive stall. REMOVED 2026-10-15: just pass the
+ * 200 through. The browser gets the full video and seeks locally — one
+ * download, no waste, no stall.
  */
-function parseRange(rangeHeader, total) {
-  const m = /^bytes=(\d+)-(\d*)$/.exec((rangeHeader || '').trim());
-  if (!m || !total) return null;
-  const start = parseInt(m[1], 10);
-  let end = m[2] ? parseInt(m[2], 10) : total - 1;
-  if (isNaN(start) || start < 0 || start >= total) return null;
-  if (isNaN(end) || end >= total) end = total - 1;
-  if (end < start) return null;
-  return { start, end };
+function passThroughFull(upstreamBody, contentType, contentLength) {
+  const headers = new Headers();
+  if (contentType) headers.set('Content-Type', contentType);
+  if (contentLength) headers.set('Content-Length', contentLength);
+  headers.set('Accept-Ranges', 'bytes');
+  headers.set('Cache-Control', 'private, max-age=60');
+  return new NextResponse(upstreamBody, { status: 200, headers });
 }
 
 /**
- * Some Redtube CDN hosts (ev-ph.rdtcdn.com) IGNORE Range and answer 200 with
- * the full body. The browser's media element asked for a slice and stalls when
- * it gets 200 instead of 206 — seeking then kills playback entirely.
- * Emulate 206 server-side: skip upstream bytes until `start`, then serve only
- * [start, end] with a proper Content-Range.
+ * Fetch the stream map, optionally bypassing the Next.js fetch cache.
+ * Used for token-refresh retry when the CDN rejects with 403/410.
  */
-function emulatePartial(upstreamBody, start, end, contentType, total) {
-  const length = end - start + 1;
-  const reader = upstreamBody.getReader();
-  let pos = 0; // upstream bytes consumed
-  let sent = 0; // bytes sent to client
-  const stream = new ReadableStream({
-    async pull(controller) {
-      try {
-        while (sent < length) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunkStart = pos;
-          pos += value.length;
-          const s = Math.max(chunkStart, start);
-          const e = Math.min(pos, end + 1);
-          if (e > s) {
-            controller.enqueue(value.subarray(s - chunkStart, e - chunkStart));
-            sent += e - s;
-          }
-        }
-      } catch (err) {
-        controller.error(err);
-        return;
-      }
-      controller.close();
-      try {
-        await reader.cancel();
-      } catch {}
-    },
-    cancel() {
-      try {
-        reader.cancel();
-      } catch {}
-    },
-  });
-  const headers = new Headers();
-  if (contentType) headers.set('Content-Type', contentType);
-  headers.set('Content-Length', String(length));
-  headers.set('Content-Range', `bytes ${start}-${end}/${total}`);
-  headers.set('Accept-Ranges', 'bytes');
-  headers.set('Cache-Control', 'private, max-age=60');
-  return new NextResponse(stream, { status: 206, headers });
+async function fetchMap(noCache) {
+  const mapRes = await fetch(MAP_URL, noCache ? { cache: 'no-store' } : { next: { revalidate: 600 } });
+  if (!mapRes.ok) return null;
+  return mapRes.json();
 }
 
 export async function GET(req) {
@@ -100,9 +61,8 @@ export async function GET(req) {
     const q = (searchParams.get('q') || '720').replace(/\D/g, '') || '720';
     if (!id) return new NextResponse('vkey required', { status: 400 });
 
-    const mapRes = await fetch(MAP_URL, { next: { revalidate: 600 } });
-    if (!mapRes.ok) return new NextResponse('stream map unavailable', { status: 502 });
-    const map = await mapRes.json();
+    const map = await fetchMap(false);
+    if (!map) return new NextResponse('stream map unavailable', { status: 502 });
     const entry = map[id];
     if (!entry?.qualities?.length) {
       return new NextResponse('no streams yet', { status: 404 });
@@ -110,7 +70,7 @@ export async function GET(req) {
 
     const stream =
       entry.qualities.find(s => s.quality === q) || entry.qualities[0];
-    const target = stream?.url;
+    let target = stream?.url;
     if (!target || !hostAllowed(target)) {
       return new NextResponse('invalid stream url', { status: 502 });
     }
@@ -124,7 +84,21 @@ export async function GET(req) {
     const range = req.headers.get('range');
     if (range) headers['Range'] = range;
 
-    const upstream = await fetch(target, { headers });
+    let upstream = await fetch(target, { headers });
+
+    // Token expired (CDN signs URLs with ~2h validity). Re-fetch the map
+    // bypassing cache — the batch cycle refreshes tokens every 10 min —
+    // and retry once with the fresh URL. Transparent to the player.
+    if (upstream.status === 403 || upstream.status === 410) {
+      const freshMap = await fetchMap(true);
+      const freshEntry = freshMap?.[id];
+      const freshStream = freshEntry?.qualities?.find(s => s.quality === q) || freshEntry?.qualities?.[0];
+      if (freshStream?.url && hostAllowed(freshStream.url) && freshStream.url !== target) {
+        target = freshStream.url;
+        upstream = await fetch(target, { headers });
+      }
+    }
+
     if (!upstream.ok && upstream.status !== 206) {
       return new NextResponse('upstream error', { status: 502 });
     }
@@ -148,28 +122,14 @@ export async function GET(req) {
     }
 
     // Upstream IGNORED our Range and answered 200 with the full body
-    // (ev-ph.rdtcdn.com does this). Emulate 206 so seeking keeps working.
-    const total = parseInt(upstream.headers.get('content-length') || '0', 10);
-    const r = parseRange(range, total);
-    if (r && upstream.body) {
-      return emulatePartial(
-        upstream.body,
-        r.start,
-        r.end,
-        upstream.headers.get('content-type'),
-        total
-      );
-    }
-
-    // Can't emulate (unknown size / unparseable range): pass the 200 through.
-    const outHeaders = new Headers();
-    const ct = upstream.headers.get('content-type');
-    if (ct) outHeaders.set('Content-Type', ct);
-    const cl = upstream.headers.get('content-length');
-    if (cl) outHeaders.set('Content-Length', cl);
-    outHeaders.set('Accept-Ranges', 'bytes');
-    outHeaders.set('Cache-Control', 'private, max-age=60');
-    return new NextResponse(upstream.body, { status: 200, headers: outHeaders });
+    // (some ev-ph.rdtcdn.com URLs do this). Pass it through directly —
+    // the browser gets the full video and seeks locally. No wasteful
+    // download-and-skip.
+    return passThroughFull(
+      upstream.body,
+      upstream.headers.get('content-type'),
+      upstream.headers.get('content-length')
+    );
   } catch (e) {
     return new NextResponse('proxy error: ' + e.message, { status: 500 });
   }

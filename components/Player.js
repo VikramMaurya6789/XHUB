@@ -403,7 +403,7 @@ export default function Player({
             ref={videoRef}
             poster={poster}
             playsInline
-            preload="metadata"
+            preload="auto"
             className="player-video-element"
             onClick={togglePlay}
             onPlay={() => setIsPlaying(true)}
