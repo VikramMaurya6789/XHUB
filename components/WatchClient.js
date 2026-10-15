@@ -5,7 +5,15 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
 import Player from '@/components/Player';
+import VideoStatsCard from '@/components/VideoStatsCard';
+import Comments from '@/components/Comments';
+import { getUid } from '@/lib/uid';
+import { readJSON, writeJSON, syncFollow } from '@/lib/local';
 import { getInitialAvatar } from '@/lib/avatar';
+import { deriveTagsFromTitle } from '@/lib/discovery';
+import { isVerifiedUploader } from '@/lib/verified';
+import PlaylistModal from '@/components/PlaylistModal';
+import { isLiked, toggleLiked, cacheVideo, getPlaylist } from '@/lib/library';
 import {
   ThumbsUpIcon,
   ThumbsDownIcon,
@@ -17,7 +25,9 @@ import {
   FlagIcon,
   BadgeCheckIcon,
   StarIcon,
-  CheckIcon
+  CheckIcon,
+  ListPlusIcon,
+  QrCodeIcon
 } from '@/components/Icons';
 
 export default function WatchClient({ vkey, initialVideo = null, initialError = null }) {
@@ -29,6 +39,10 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
   const [likeCount, setLikeCount] = useState(initialVideo?.ratingsCount || 0);
+  // Server-backed community ratings (best-effort; local state is source of truth)
+  const [apiLikes, setApiLikes] = useState(0);
+  const [apiDislikes, setApiDislikes] = useState(0);
+  const [myRating, setMyRating] = useState(null); // 'like' | 'dislike' | null
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSavedLater, setIsSavedLater] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -41,6 +55,14 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
   const [showReportModal, setShowReportModal] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
+
+  // Library features (local-only): liked videos, playlists, download, QR.
+  const [isLikedVideo, setIsLikedVideo] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [playlistId, setPlaylistId] = useState(null);
+  const [playlistQueue, setPlaylistQueue] = useState(null); // {name, vkeyList, index}
 
   const [streams, setStreams] = useState([]);
   const [streamsRetrying, setStreamsRetrying] = useState(false);
@@ -90,6 +112,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
           setLikeCount(data.ratingsCount || 0);
           setLoading(false);
           syncLocalStorage(data);
+          loadRatings(data.vkey || vkey);
         })
         .catch(err => {
           setError(err.message || 'Video not found or streaming unavailable');
@@ -101,6 +124,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
     } else if (initialVideo) {
       syncLocalStorage(initialVideo);
       fetchStreams(vkey);
+      loadRatings(initialVideo.vkey || vkey);
     }
   }, [vkey, initialVideo, initialError]);
 
@@ -119,32 +143,125 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
 
       const subs = JSON.parse(localStorage.getItem('xhub_subscriptions') || '[]');
       setIsSubscribed(subs.includes(data.uploader?.name));
+
+      // Library: liked state + keep the video-meta cache fresh so vkey-only
+      // collections (playlists / liked / folders) can render full cards.
+      setIsLikedVideo(isLiked(data.vkey));
+      cacheVideo(data);
     } catch (e) {
       console.warn('localStorage error:', e);
     }
   };
 
-  const handleLike = () => {
-    if (liked) {
-      setLiked(false);
-      setLikeCount(prev => prev - 1);
-    } else {
-      setLiked(true);
-      setLikeCount(prev => prev + 1);
-      if (disliked) setDisliked(false);
+  // Library: liked-videos heart toggle (localStorage xhub_liked).
+  const handleToggleLiked = () => {
+    if (!video) return;
+    try {
+      setIsLikedVideo(toggleLiked(video));
+    } catch {}
+  };
+
+  // Library: playlist "play all" queue (?playlist=<id> on the watch URL).
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search).get('playlist');
+      setPlaylistId(q || null);
+    } catch {
+      setPlaylistId(null);
     }
+  }, [vkey]);
+
+  useEffect(() => {
+    if (!playlistId) {
+      setPlaylistQueue(null);
+      return;
+    }
+    const pl = getPlaylist(playlistId);
+    if (!pl) {
+      setPlaylistQueue(null);
+      return;
+    }
+    const idx = pl.vkeys.findIndex(k => String(k) === String(vkey));
+    setPlaylistQueue({ name: pl.name, vkeyList: pl.vkeys, index: idx });
+  }, [playlistId, vkey]);
+
+  const handleLike = () => {
+    submitRating('like');
   };
 
   const handleDislike = () => {
-    if (disliked) {
-      setDisliked(false);
-    } else {
-      setDisliked(true);
-      if (liked) {
-        setLiked(false);
-        setLikeCount(prev => prev - 1);
+    submitRating('dislike');
+  };
+
+  // Community ratings: optimistic local toggle + best-effort server sync.
+  // localStorage (xhub_likes) stays the source of truth for this device.
+  const submitRating = async type => {
+    const uid = getUid();
+    const prevMy = myRating;
+    const nextMy =
+      type === 'like'
+        ? prevMy === 'like'
+          ? null
+          : 'like'
+        : prevMy === 'dislike'
+          ? null
+          : 'dislike';
+    setMyRating(nextMy);
+    setLiked(nextMy === 'like');
+    setDisliked(nextMy === 'dislike');
+
+    try {
+      const likesLS = readJSON('xhub_likes', {});
+      if (video?.vkey) {
+        if (nextMy) likesLS[video.vkey] = nextMy;
+        else delete likesLS[video.vkey];
+        writeJSON('xhub_likes', likesLS);
       }
+    } catch {}
+
+    try {
+      const res = await fetch('/api/ratings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vkey, type, uid }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.ok) {
+        setApiLikes(data.likes);
+        setApiDislikes(data.dislikes);
+        setMyRating(data.myRating);
+        setLiked(data.myRating === 'like');
+        setDisliked(data.myRating === 'dislike');
+      }
+    } catch {
+      // server unreachable — optimistic local state stands
     }
+  };
+
+  // Load server-backed ratings for this video (best-effort).
+  const loadRatings = currentVkey => {
+    if (!currentVkey) return;
+    fetch(`/api/ratings?vkey=${encodeURIComponent(currentVkey)}&uid=${encodeURIComponent(getUid())}`)
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data?.ok) {
+          setApiLikes(data.likes);
+          setApiDislikes(data.dislikes);
+          setMyRating(data.myRating);
+          setLiked(data.myRating === 'like');
+          setDisliked(data.myRating === 'dislike');
+        }
+      })
+      .catch(() => {});
+    // Restore this device's own rating as local truth if the server has none
+    try {
+      const mine = readJSON('xhub_likes', {})[currentVkey];
+      if (mine === 'like' || mine === 'dislike') {
+        setMyRating(m => (m ? m : mine));
+        setLiked(m => (m ? m : mine === 'like'));
+        setDisliked(m => (m ? m : mine === 'dislike'));
+      }
+    } catch {}
   };
 
   const handleToggleFavorite = () => {
@@ -185,14 +302,19 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
     try {
       const subs = JSON.parse(localStorage.getItem('xhub_subscriptions') || '[]');
       let updated;
+      let action;
       if (isSubscribed) {
         updated = subs.filter(s => s !== name);
         setIsSubscribed(false);
+        action = 'unfollow';
       } else {
         updated = [...subs, name];
         setIsSubscribed(true);
+        action = 'follow';
       }
       localStorage.setItem('xhub_subscriptions', JSON.stringify(updated));
+      // Best-effort server sync — localStorage stays the source of truth.
+      syncFollow(getUid(), name, name, action);
     } catch {}
   };
 
@@ -219,6 +341,27 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
     setCopiedEmbed(true);
     setTimeout(() => setCopiedEmbed(false), 2500);
   };
+
+  // Library: best available mp4 for the Download button (highest quality first).
+  const downloadStream = (() => {
+    if (!Array.isArray(streams) || !streams.length) return null;
+    const rank = q => {
+      const n = parseInt(String(q).replace(/\D/g, ''), 10);
+      return Number.isFinite(n) ? n : 0;
+    };
+    return [...streams].sort((a, b) => rank(b.quality) - rank(a.quality))[0];
+  })();
+  const downloadFilename =
+    `${String(video?.title || 'xhub-video').replace(/[^\w\- ]+/g, '').trim().slice(0, 80) || 'xhub-video'}.mp4`;
+  const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
+
+  // Library: when playing from a playlist (?playlist=<id>), the player's
+  // autoplay-next target becomes the next video in that playlist.
+  const playlistNextUrl =
+    playlistQueue && playlistId && playlistQueue.index >= 0 &&
+    playlistQueue.index < playlistQueue.vkeyList.length - 1
+      ? `/watch/${encodeURIComponent(playlistQueue.vkeyList[playlistQueue.index + 1])}?playlist=${encodeURIComponent(playlistId)}`
+      : null;
 
   if (error) {
     return (
@@ -276,6 +419,11 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
     );
   }
 
+  // Discovery: tag chips — use API tags when present, otherwise derive
+  // keywords from the title (meaningful words > 3 chars, max 8).
+  const displayTags =
+    video?.tags && video.tags.length > 0 ? video.tags : deriveTagsFromTitle(video?.title);
+
   return (
     <>
       <AgeGate />
@@ -285,6 +433,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
         {/* Primary Column (§5.5) */}
         <div className="watch-col-primary">
           <Player
+            vkey={vkey}
             hlsUrl={video.hls}
             streams={streams}
             streamsRetrying={streamsRetrying}
@@ -292,6 +441,16 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
             title={video.title}
             isTheater={isTheater}
             onTheaterToggle={() => setIsTheater(!isTheater)}
+            description={video.description}
+            nextUrl={
+              // Library: playlist "play all" overrides the default up-next target.
+              playlistNextUrl ||
+              (video.related?.[0]
+                ? `/watch/${encodeURIComponent(video.related[0].vkey || video.related[0].id)}`
+                : null)
+            }
+            autoplayNext={autoplayNext}
+            onAutoplayNextChange={setAutoplayNext}
             onStreamError={() => {
               // Video element failed (e.g., token expired mid-playback).
               // Re-fetch streams after 15s — the batch refreshes every 10 min,
@@ -300,6 +459,22 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
               setTimeout(() => fetchStreams(vkey), 15000);
             }}
           />
+
+          {/* Library: playlist "play all" queue banner */}
+          {playlistQueue && (
+            <div className="lib-playlist-banner">
+              <ListPlusIcon size={15} />
+              <span>
+                Playing from playlist <strong>{playlistQueue.name}</strong>
+                {playlistQueue.index >= 0 && (
+                  <> — {playlistQueue.index + 1} of {playlistQueue.vkeyList.length}</>
+                )}
+              </span>
+              <Link href={`/playlists/${encodeURIComponent(playlistId)}`} className="lib-playlist-banner-link">
+                View playlist
+              </Link>
+            </div>
+          )}
 
           {/* Title Header */}
           <h1 className="watch-title-header">{video.title}</h1>
@@ -321,7 +496,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
                   className="uploader-name-verified"
                 >
                   <span>{video.uploader?.name || 'Unknown uploader'}</span>
-                  {video.uploader?.verified && <BadgeCheckIcon size={15} className="verified-badge-icon" />}
+                  {(video.uploader?.verified || isVerifiedUploader(video.uploader?.name)) && <BadgeCheckIcon size={15} className="verified-badge-icon" />}
                 </Link>
                 <span className="uploader-meta-stats">
                   {video.views} • {video.age || 'Recently'}
@@ -355,7 +530,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
               title="Like this video"
             >
               <ThumbsUpIcon size={16} />
-              <span>{likeCount}</span>
+              <span>{likeCount + apiLikes}</span>
             </button>
 
             {/* Dislike */}
@@ -365,7 +540,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
               title="Dislike this video"
             >
               <ThumbsDownIcon size={16} />
-              <span>Dislike</span>
+              <span>{apiDislikes > 0 ? apiDislikes : 'Dislike'}</span>
             </button>
 
             {/* Favorites */}
@@ -429,6 +604,46 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
               <FlagIcon size={16} />
               <span>Report</span>
             </button>
+
+            {/* Library: Liked (heart) */}
+            <button
+              onClick={handleToggleLiked}
+              className={`watch-action-btn ${isLikedVideo ? 'active' : ''}`}
+              title="Like this video (saved to Liked Videos)"
+            >
+              <HeartIcon size={16} filled={isLikedVideo} />
+              <span>{isLikedVideo ? 'Liked' : 'Like it'}</span>
+            </button>
+
+            {/* Library: Add to playlist */}
+            <button
+              onClick={() => setShowPlaylistModal(true)}
+              className="watch-action-btn"
+              title="Save to playlist"
+            >
+              <ListPlusIcon size={16} />
+              <span>Playlist</span>
+            </button>
+
+            {/* Library: Download MP4 */}
+            <button
+              onClick={() => setShowDownloadModal(true)}
+              className="watch-action-btn"
+              title="Download this video"
+            >
+              <DownloadIcon size={16} />
+              <span>Download</span>
+            </button>
+
+            {/* Library: Continue on phone (QR code) */}
+            <button
+              onClick={() => setShowQrModal(true)}
+              className="watch-action-btn"
+              title="Continue watching on your phone"
+            >
+              <QrCodeIcon size={16} />
+              <span>On phone</span>
+            </button>
           </div>
 
           {/* Description (collapsible §5.5) */}
@@ -443,10 +658,11 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
               {isDescExpanded ? 'Show less ↑' : 'Show more description ↓'}
             </button>
 
-            {/* Tags & Categories Chips */}
-            {video.tags && video.tags.length > 0 && (
+            {/* Tags & Categories Chips — fall back to title-derived keywords
+                when the catalog entry has no tags; chips link to /search?q=tag */}
+            {displayTags.length > 0 && (
               <div className="watch-tags-row">
-                {video.tags.map(tag => (
+                {displayTags.map(tag => (
                   <Link
                     key={tag}
                     href={`/search?q=${encodeURIComponent(tag)}`}
@@ -459,42 +675,13 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
             )}
           </div>
 
-          {/* Comments Section (R1: Honest empty state, never invent comments) */}
+          {/* Video stats — deterministic estimated 14-day trend card */}
+          <VideoStatsCard video={video} />
+
+          {/* Comments Section — community comments via /api/comments */}
           <section className="watch-comments-section">
-            <h3 className="comments-header-title">
-              Comments ({video.comments?.length || 0})
-            </h3>
-
-            {/* Disabled Reply Box per §5.5 */}
-            <div className="comment-input-disabled-box">
-              <span>Login to comment (Member accounts coming soon in v2)</span>
-            </div>
-
-            {video.comments && video.comments.length > 0 ? (
-              <div className="comments-list">
-                {video.comments.map(comment => (
-                  <div key={comment.id} className="comment-item">
-                    <img
-                      src={comment.avatar || getInitialAvatar(comment.author)}
-                      alt={comment.author}
-                      className="comment-author-avatar"
-                      loading="lazy"
-                    />
-                    <div className="comment-content-box">
-                      <div>
-                        <span className="comment-author-name">{comment.author}</span>
-                        <span className="comment-time">{comment.time}</span>
-                      </div>
-                      <p className="comment-body-text">{comment.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-3)', fontSize: '0.9rem' }}>
-                No comments yet.
-              </div>
-            )}
+            <h3 className="comments-header-title">Comments</h3>
+            <Comments vkey={video.vkey || vkey} />
           </section>
         </div>
 
@@ -531,7 +718,12 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
                 </div>
                 <div className="related-sidebar-info">
                   <h4 className="related-card-title">{rel.title}</h4>
-                  <div className="related-card-uploader">{rel.uploader?.name || 'Verified Creator'}</div>
+                  <div className="related-card-uploader">
+                    {rel.uploader?.name || 'Verified Creator'}
+                    {(rel.uploader?.verified || isVerifiedUploader(rel.uploader?.name)) && (
+                      <BadgeCheckIcon size={12} className="verified-badge-icon" style={{ marginLeft: '4px', verticalAlign: '-2px' }} />
+                    )}
+                  </div>
                   <div className="related-card-stats">
                     <span>{rel.views} views</span>
                     <span>•</span>
@@ -608,6 +800,85 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
                 className="filter-pill-btn"
                 style={{ padding: '0.55rem' }}
               >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Library: playlist picker modal */}
+      {showPlaylistModal && video && (
+        <PlaylistModal video={video} onClose={() => setShowPlaylistModal(false)} />
+      )}
+
+      {/* Library: download modal */}
+      {showDownloadModal && (
+        <div className="auth-modal-backdrop" onClick={() => setShowDownloadModal(false)}>
+          <div className="auth-modal" onClick={e => e.stopPropagation()}>
+            <div className="auth-modal-header">
+              <h3>Download video</h3>
+              <button onClick={() => setShowDownloadModal(false)} className="auth-close-btn">✕</button>
+            </div>
+            <p className="auth-modal-desc">
+              {downloadStream
+                ? `Highest available quality: ${downloadStream.quality}p MP4.`
+                : 'Stream links are still resolving — try again in a few seconds.'}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {downloadStream && (
+                <a
+                  href={downloadStream.url}
+                  download={downloadFilename}
+                  className="filter-pill-btn active"
+                  style={{ textAlign: 'center', padding: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                >
+                  <DownloadIcon size={15} />
+                  <span>Download MP4 ({downloadStream.quality}p)</span>
+                </a>
+              )}
+              {downloadStream && (
+                <a
+                  href={downloadStream.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="filter-pill-btn"
+                  style={{ textAlign: 'center', padding: '0.55rem' }}
+                >
+                  Open in new tab instead
+                </a>
+              )}
+              <button onClick={() => setShowDownloadModal(false)} className="filter-pill-btn" style={{ padding: '0.55rem' }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Library: QR code modal (continue on phone) */}
+      {showQrModal && (
+        <div className="auth-modal-backdrop" onClick={() => setShowQrModal(false)}>
+          <div className="auth-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '340px', textAlign: 'center' }}>
+            <div className="auth-modal-header">
+              <h3>Continue on phone</h3>
+              <button onClick={() => setShowQrModal(false)} className="auth-close-btn">✕</button>
+            </div>
+            <p className="auth-modal-desc">Scan with your phone camera to open this video:</p>
+            {pageUrl ? (
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(pageUrl)}`}
+                alt="QR code for this page"
+                width={220}
+                height={220}
+                style={{ borderRadius: '8px', background: '#fff', padding: '8px', margin: '0 auto' }}
+                loading="lazy"
+              />
+            ) : (
+              <p className="auth-modal-desc">QR unavailable.</p>
+            )}
+            <div style={{ marginTop: '1rem' }}>
+              <button onClick={() => setShowQrModal(false)} className="filter-pill-btn" style={{ padding: '0.55rem 1.5rem' }}>
                 Close
               </button>
             </div>
