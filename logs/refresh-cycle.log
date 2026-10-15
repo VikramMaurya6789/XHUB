@@ -2280,3 +2280,40 @@ fatal: expected flush after ref listing
 [2026-10-15T20:24:33.696Z] progress 800/800
 [2026-10-15T20:24:34.031Z] progress 800/800
 [2026-10-15T20:24:34.408Z] merged 139 worker part entries
+[2026-10-15T20:24:52.508Z] progress 1300/1400
+[2026-10-15T20:25:16.935Z] progress 1400/1400
+[2026-10-15T20:25:17.068Z] progress 1400/1400
+[2026-10-15T20:25:17.072Z] progress 1400/1400
+[2026-10-15T20:25:17.315Z] progress 1400/1400
+[2026-10-15T20:25:17.329Z] progress 1400/1400
+[2026-10-15T20:25:17.600Z] progress 1400/1400
+[2026-10-15T20:25:17.679Z] progress 1400/1400
+[2026-10-15T20:25:17.682Z] progress 1400/1400
+[2026-10-15T20:25:17.740Z] progress 1400/1400
+[2026-10-15T20:25:17.872Z] progress 1400/1400
+[2026-10-15T20:25:17.913Z] progress 1400/1400
+[2026-10-15T20:25:17.984Z] progress 1400/1400
+[2026-10-15T20:25:18.005Z] progress 1400/1400
+[2026-10-15T20:25:18.293Z] progress 1400/1400
+[2026-10-15T20:25:18.542Z] progress 1400/1400
+[2026-10-15T20:25:19.140Z] progress 1400/1400
+[2026-10-15T20:25:19.162Z] progress 1400/1400
+[2026-10-15T20:25:19.166Z] progress 1400/1400
+[2026-10-15T20:25:19.167Z] progress 1400/1400
+[2026-10-15T20:25:19.198Z] progress 1400/1400
+[2026-10-15T20:25:19.225Z] progress 1400/1400
+[2026-10-15T20:25:19.225Z] progress 1400/1400
+[2026-10-15T20:25:19.233Z] progress 1400/1400
+[2026-10-15T20:25:19.234Z] progress 1400/1400
+[2026-10-15T20:25:19.238Z] progress 1400/1400
+[2026-10-15T20:25:19.247Z] progress 1400/1400
+[2026-10-15T20:25:19.393Z] progress 1400/1400
+[2026-10-15T20:25:19.424Z] progress 1400/1400
+[2026-10-15T20:25:19.443Z] progress 1400/1400
+[2026-10-15T20:25:19.444Z] progress 1400/1400
+[2026-10-15T20:25:19.774Z] progress 1400/1400
+[2026-10-15T20:25:19.808Z] progress 1400/1400
+[2026-10-15T20:25:29.198Z] push ok: https://github.com/VikramMaurya6789/XHUB/commit/3a3b47ca4cbfa1da3075983ca067685820bff4ee
+[2026-10-15T20:25:29.198Z] done in 667s: 745 streams, 752 thumbs
+[2026-10-15T20:25:47.463Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-1: 1345 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-1.json
+[2026-10-15T20:25:47.464Z] done in 775s: 1345 streams (shard 1/2)
