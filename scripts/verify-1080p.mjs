@@ -119,17 +119,20 @@ async function main() {
 
   console.log(`DONE: checked ${checked}, new 1080p: ${verified}, total hd1080: ${Object.keys(hd1080).length}`);
 
-  // Push if we added new 1080p videos
+  // Push if we added new 1080p videos.
+  // NOTE: gh.py builds the remote commit directly via the GitHub API from the
+  // files' disk content — do NOT `git commit` first (a local commit makes
+  // `git status` clean so `gh.py push --auto` silently skips, and the
+  // refresh loop's `git reset --hard origin/main` would then wipe the local
+  // commit). Push explicit file paths (no --auto) so unrelated working-tree
+  // deletions can't 422 the tree call.
   if (verified > 0) {
     try {
-      const st = execSync('git status --porcelain public/streams.json public/hd1080.json', { cwd: ROOT, encoding: 'utf8' }).trim();
-      if (st) {
-        execSync('git add public/streams.json public/hd1080.json', { cwd: ROOT });
-        execSync(`git -c user.name="RoyalPlayzYT" -c user.email="royal@example.com" commit -q -m "verify: +${verified} 1080p videos from catalog"`, { cwd: ROOT });
-        // push via gh.py (PYTHONPATH workaround for dynamic_credentials module, see AGENTS.md 2026-10-15)
-        execSync(`PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/skills/github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "verify: +${verified} 1080p videos" --dir ${ROOT} --auto`, { timeout: 120000 });
-        console.log('pushed');
-      }
+      const out = execSync(
+        `PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "verify: +${verified} 1080p videos" --dir ${ROOT} public/streams.json public/hd1080.json`,
+        { timeout: 120000, encoding: 'utf8' }
+      );
+      console.log('push result:', out.trim().split('\n').slice(-2).join(' | '));
     } catch (e) {
       console.log('push failed:', e.message.slice(0, 200));
     }
