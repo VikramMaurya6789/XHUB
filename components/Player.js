@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Hls from 'hls.js';
 import {
   PlayIcon,
@@ -8,10 +9,38 @@ import {
   VolumeXIcon,
   MaximizeIcon,
   SettingsIcon,
-  PiPIcon
+  PiPIcon,
+  LoopIcon,
+  Forward10Icon,
+  CastIcon,
+  CaptionsIcon
 } from './Icons';
+import { useMiniPlayer } from './MiniPlayerProvider';
+
+// localStorage helpers (private, JSON-safe)
+const readJSON = (key, fallback) => {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+const writeJSON = (key, val) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch {}
+};
+
+// Chapter regex: "0:00 Intro", "1:23:45 Deep dive"
+const CHAPTER_RE = /(\d{1,2}:\d{2}(?::\d{2})?)\s+([^\n]{1,80})/g;
+const chapterToSecs = ts => {
+  const p = ts.split(':').map(Number);
+  return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1];
+};
 
 export default function Player({
+  vkey,
   hlsUrl,
   streams = [],
   streamsRetrying = false,
@@ -20,8 +49,15 @@ export default function Player({
   onTheaterToggle,
   isTheater = false,
   onStreamError,
-  onEnded = null,
+  onEnded = null,         // parent-owned ended hook (e.g. playlist advance);
+                         // return true if it navigated, so built-in autoplay skips
+  description = '',       // chapters parsing
+  nextUrl = null,         // autoplay-next target
+  autoplayNext = false,   // toggle state (owned by WatchClient)
+  onAutoplayNextChange,   // toggle sync callback
 }) {
+  const router = useRouter();
+  const mini = useMiniPlayer();
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const containerRef = useRef(null);
@@ -49,6 +85,37 @@ export default function Player({
   const qualitySwitchingRef = useRef(null);
   qualitySwitchingRef.current = qualitySwitching;
 
+  // ---- Feature-pack state ----
+  const [isLoop, setIsLoop] = useState(false);            // loop single video
+  const [abLoop, setAbLoop] = useState({ a: null, b: null }); // A-B loop
+  const [sleepTimer, setSleepTimer] = useState(0);         // minutes, 0 = off
+  const [sleepRemaining, setSleepRemaining] = useState(0); // ms countdown
+  const [flash, setFlash] = useState(null);                // transient center indicator {text,key}
+  const [chapters, setChapters] = useState([]);            // parsed chapters
+  const [subCues, setSubCues] = useState([]);              // parsed SRT cues
+  const [subsOn, setSubsOn] = useState(false);             // subtitle overlay toggle
+  const [activeCue, setActiveCue] = useState('');          // current cue text
+  const [castReady, setCastReady] = useState(false);       // chromecast available
+  const [brightness, setBrightness] = useState(1);          // gesture brightness
+
+  // Refs for async/unmount handlers (always latest values)
+  const latestRef = useRef({});
+  latestRef.current = { activeStreamUrl: null, vkey, title, poster, autoplayNext, nextUrl };
+  const miniApiRef = useRef(mini);
+  miniApiRef.current = mini;
+  const brightnessRef = useRef(1);
+  const clickTimerRef = useRef(null);   // single vs double click distinguisher
+  const swipeFlagRef = useRef(false);   // suppress click right after a swipe
+  const touchStartRef = useRef(null);   // gesture tracking
+  const sleepTimeoutRef = useRef(null);
+  const sleepIntervalRef = useRef(null);
+  const sleepEndRef = useRef(0);
+  const lastSaveRef = useRef(0);        // continue-watch throttle
+  const resumedKeyRef = useRef(null);   // resume-once guard per video+stream
+  const subFileRef = useRef(null);
+  const activeCueRef = useRef('');
+  const flashTimerRef = useRef(null);
+
   // Available stream source URL — respects the selected mp4 quality.
   // streams: [{ quality: '1080'|'720'|'480'|'240', url }] from /api/stream
   const streamList = Array.isArray(streams) ? streams : [];
@@ -69,6 +136,22 @@ export default function Player({
       ? (streamList.find(s => s.quality === (activeQuality || pickDefaultQuality(streamList)))?.url ||
          streamList[0]?.url)
       : null);
+  latestRef.current.activeStreamUrl = activeStreamUrl;
+
+  // Transient center flash ("+10s", "Resumed 12:34", "Volume 80%"…)
+  const showFlash = text => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    setFlash({ text, key: Date.now() });
+    flashTimerRef.current = setTimeout(() => setFlash(null), 900);
+  };
+
+  const seekBy = secs => {
+    const video = videoRef.current;
+    if (!video) return;
+    const dur = video.duration || 0;
+    video.currentTime = Math.max(0, Math.min(dur, video.currentTime + secs));
+    triggerControls();
+  };
 
   // Initialize HLS / HTML5 Video
   useEffect(() => {
@@ -173,6 +256,93 @@ export default function Player({
     };
   }, [activeStreamUrl]);
 
+  // Continue watching + speed memory: restore once per video+stream load.
+  // Resume only if saved >10s and <95% of duration; finished videos start over.
+  // Unified xhub_progress schema { [vkey]: { t, d, ts } } — also feeds the
+  // profile page's total-watch-time stat (single writer, no duplicates).
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !vkey || !activeStreamUrl) return;
+    const key = `${vkey}|${activeStreamUrl}`;
+    resumedKeyRef.current = null;
+    const onMeta = () => {
+      if (resumedKeyRef.current === key) return;
+      resumedKeyRef.current = key;
+      const dur = video.duration;
+      // Saved position
+      const saved = readJSON('xhub_progress', {})[vkey];
+      if (saved && saved.t > 10 && dur && saved.t < dur * 0.95) {
+        try { video.currentTime = Math.min(saved.t, dur - 1); } catch {}
+        showFlash(`Resumed ${formatTime(saved.t)}`);
+      }
+      // Saved playback speed
+      const sp = readJSON('xhub_speed', {})[vkey];
+      if (sp && speeds.includes(sp)) {
+        try { video.playbackRate = sp; } catch {}
+        setPlaybackSpeed(sp);
+      }
+    };
+    video.addEventListener('loadedmetadata', onMeta);
+    return () => video.removeEventListener('loadedmetadata', onMeta);
+  }, [activeStreamUrl, vkey]);
+
+  // Chapters: parse "0:00 Intro" style timestamps from title + description
+  useEffect(() => {
+    const text = `${title || ''}\n${description || ''}`;
+    const found = [];
+    let m;
+    CHAPTER_RE.lastIndex = 0;
+    while ((m = CHAPTER_RE.exec(text)) && found.length < 60) {
+      found.push({ t: chapterToSecs(m[1]), label: m[2].trim() });
+    }
+    found.sort((a, b) => a.t - b.t);
+    setChapters(found.filter((c, i) => i === 0 || c.t !== found[i - 1].t));
+  }, [title, description]);
+
+  // Chromecast: load sender SDK dynamically; show button only if usable
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.chrome?.cast) { setCastReady(true); return; }
+    window.__onGCastApiAvailable = available => { if (available) setCastReady(true); };
+    if (document.querySelector('script[data-cast-sender]')) return;
+    const s = document.createElement('script');
+    s.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js';
+    s.async = true;
+    s.setAttribute('data-cast-sender', '1');
+    s.onerror = () => {}; // offline/adblock: stay hidden, no crash
+    document.head.appendChild(s);
+  }, []);
+
+  // Sleep timer cleanup on unmount
+  useEffect(() => () => {
+    if (sleepTimeoutRef.current) clearTimeout(sleepTimeoutRef.current);
+    if (sleepIntervalRef.current) clearInterval(sleepIntervalRef.current);
+    if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+  }, []);
+
+  // Mini player (#10): clear any stale mini overlay when a watch page mounts…
+  useEffect(() => {
+    miniApiRef.current?.clear?.();
+  }, []);
+  // …and hand the playing video off to it when navigating away mid-playback.
+  // NOTE: no visibilitychange auto-pause anywhere — background audio keeps playing.
+  useEffect(() => () => {
+    const v = videoRef.current;
+    const L = latestRef.current;
+    try {
+      if (v && L.vkey && L.activeStreamUrl && !v.paused && !v.ended && v.currentTime > 1) {
+        miniApiRef.current?.register?.({
+          src: L.activeStreamUrl,
+          vkey: L.vkey,
+          title: L.title,
+          poster: L.poster,
+          startTime: v.currentTime,
+        });
+      }
+    } catch {}
+  }, []);
+
   // Controls auto-hide
   const triggerControls = () => {
     setShowControls(true);
@@ -201,13 +371,85 @@ export default function Player({
     }
   }, []);
 
+  // Single click = play/pause (300ms delay), double click/tap = ∓10s seek.
+  // Left third = -10s, right third = +10s, middle third = play/pause.
+  const handleVideoClick = e => {
+    if (swipeFlagRef.current) { swipeFlagRef.current = false; return; } // was a swipe
+    const video = videoRef.current;
+    if (!video) return;
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+      const rect = video.getBoundingClientRect();
+      const x = (e.clientX ?? rect.left + rect.width / 2) - rect.left;
+      const third = rect.width / 3;
+      if (x < third) { seekBy(-10); showFlash('-10s'); }
+      else if (x > rect.width - third) { seekBy(10); showFlash('+10s'); }
+      else togglePlay();
+      triggerControls();
+    } else {
+      clickTimerRef.current = setTimeout(() => {
+        clickTimerRef.current = null;
+        togglePlay();
+      }, 300);
+    }
+  };
+
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video) return;
-    setCurrentTime(video.currentTime);
+    const t = video.currentTime;
+    setCurrentTime(t);
     if (video.buffered.length > 0) {
       setBuffered(video.buffered.end(video.buffered.length - 1));
     }
+    // A-B loop: jump back to A when hitting B
+    if (abLoop.a != null && abLoop.b != null && abLoop.b > abLoop.a && t >= abLoop.b) {
+      try { video.currentTime = abLoop.a; } catch {}
+    }
+    // Subtitle cue sync
+    if (subsOn && subCues.length) {
+      const cue = subCues.find(c => t >= c.start && t <= c.end);
+      const txt = cue ? cue.text : '';
+      if (txt !== activeCueRef.current) {
+        activeCueRef.current = txt;
+        setActiveCue(txt);
+      }
+    }
+    // Continue watching: persist position (throttled 5s), prune 30-day-old entries.
+    // Single unified writer for xhub_progress = { [vkey]: { t, d, ts } }.
+    if (vkey && video.duration) {
+      const now = Date.now();
+      if (now - lastSaveRef.current > 5000) {
+        lastSaveRef.current = now;
+        const prog = readJSON('xhub_progress', {});
+        prog[vkey] = { t, d: video.duration, ts: now };
+        for (const k of Object.keys(prog)) {
+          const e = prog[k];
+          if (!e || typeof e !== 'object' || now - (e.ts || 0) > 30 * 864e5) delete prog[k];
+        }
+        writeJSON('xhub_progress', prog);
+      }
+    }
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    // Finished — mark position at duration (not deleted): the <95% resume
+    // check naturally skips it next time, and the profile page's
+    // total-watch-time stat still counts the completed video.
+    if (vkey) {
+      const prog = readJSON('xhub_progress', {});
+      const dur = videoRef.current?.duration || prog[vkey]?.d || 0;
+      prog[vkey] = { t: dur, d: dur, ts: Date.now() };
+      writeJSON('xhub_progress', prog);
+    }
+    // Autoplay next video: parent hook first (playlist advance etc.).
+    // If it returns true it already navigated — skip the built-in fallback.
+    let parentHandled = false;
+    try { parentHandled = onEnded?.() === true; } catch {}
+    const L = latestRef.current;
+    if (!parentHandled && L.autoplayNext && L.nextUrl) router.push(L.nextUrl);
   };
 
   const handleSeek = e => {
@@ -245,6 +487,51 @@ export default function Player({
     } else {
       document.exitFullscreen?.() || document.webkitExitFullscreen?.();
     }
+  };
+
+  // Loop single video
+  const toggleLoop = () => {
+    const video = videoRef.current;
+    const next = !isLoop;
+    setIsLoop(next);
+    if (video) video.loop = next;
+    triggerControls();
+  };
+
+  // A-B loop
+  const setABPoint = which => {
+    const t = videoRef.current?.currentTime || 0;
+    setAbLoop(prev => ({ ...prev, [which]: t }));
+    showFlash(which === 'a' ? `A set ${formatTime(t)}` : `B set ${formatTime(t)}`);
+  };
+  const clearAB = () => setAbLoop({ a: null, b: null });
+
+  // Sleep timer: pause after N minutes, with live countdown in settings
+  const clearSleepTimers = () => {
+    if (sleepTimeoutRef.current) clearTimeout(sleepTimeoutRef.current);
+    if (sleepIntervalRef.current) clearInterval(sleepIntervalRef.current);
+    sleepTimeoutRef.current = sleepIntervalRef.current = null;
+  };
+  const setSleep = mins => {
+    clearSleepTimers();
+    setSleepTimer(mins);
+    if (!mins) { setSleepRemaining(0); return; }
+    const endAt = Date.now() + mins * 60000;
+    sleepEndRef.current = endAt;
+    setSleepRemaining(mins * 60000);
+    sleepTimeoutRef.current = setTimeout(() => {
+      videoRef.current?.pause();
+      clearSleepTimers();
+      setSleepTimer(0);
+      setSleepRemaining(0);
+      showFlash('Sleep timer: paused');
+    }, mins * 60000);
+    sleepIntervalRef.current = setInterval(() => {
+      const left = sleepEndRef.current - Date.now();
+      if (left <= 0) return;
+      setSleepRemaining(left);
+    }, 1000);
+    setShowSettings(false);
   };
 
   const changeQuality = q => {
@@ -314,8 +601,141 @@ export default function Player({
     if (!video) return;
     video.playbackRate = s;
     setPlaybackSpeed(s);
+    // Speed memory per video
+    if (vkey) {
+      const mem = readJSON('xhub_speed', {});
+      mem[vkey] = s;
+      writeJSON('xhub_speed', mem);
+    }
     setShowSettings(false);
   };
+
+  // Subtitles: parse uploaded .srt
+  const parseSRT = text => {
+    const cues = [];
+    const blocks = text.replace(/\r/g, '').split(/\n\s*\n/);
+    const tsRe = /(\d+):(\d+):(\d+)[,.](\d+)\s*-->\s*(\d+):(\d+):(\d+)[,.](\d+)/;
+    for (const b of blocks) {
+      const lines = b.trim().split('\n').map(l => l.trim());
+      const tsIdx = lines.findIndex(l => l.includes('-->'));
+      if (tsIdx === -1) continue;
+      const m = lines[tsIdx].match(tsRe);
+      if (!m) continue;
+      const toSec = (h, mi, s, ms) => (+h) * 3600 + (+mi) * 60 + (+s) + (+ms) / 1000;
+      const txt = lines.slice(tsIdx + 1).join('\n').replace(/<[^>]*>/g, '').trim();
+      if (!txt) continue;
+      cues.push({ start: toSec(m[1], m[2], m[3], m[4]), end: toSec(m[5], m[6], m[7], m[8]), text: txt });
+    }
+    cues.sort((a, b) => a.start - b.start);
+    return cues;
+  };
+
+  const handleSubFile = e => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-uploading the same file
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const cues = parseSRT(String(reader.result || ''));
+      if (cues.length) {
+        setSubCues(cues);
+        setSubsOn(true);
+        activeCueRef.current = '';
+        showFlash(`Subtitles loaded (${cues.length} cues)`);
+      } else {
+        showFlash('No cues found in .srt');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Chromecast: cast the active stream URL to a receiver
+  const startCast = () => {
+    try {
+      const cast = window.chrome?.cast;
+      if (!cast || !activeStreamUrl) return;
+      const url = activeStreamUrl.startsWith('http')
+        ? activeStreamUrl
+        : window.location.origin + activeStreamUrl;
+      const loadOn = session => {
+        try {
+          const mediaInfo = new cast.media.MediaInfo(
+            url,
+            url.includes('.m3u8') ? 'application/x-mpegurl' : 'video/mp4'
+          );
+          mediaInfo.metadata = new cast.media.GenericMediaMetadata();
+          mediaInfo.metadata.title = title || 'XHUB';
+          session.loadMedia(new cast.media.LoadRequest(mediaInfo), () => {}, () => {});
+          showFlash('Casting…');
+        } catch {}
+      };
+      const sessionRequest = new cast.SessionRequest(cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID);
+      const apiConfig = new cast.ApiConfig(
+        sessionRequest,
+        s => { if (s) loadOn(s); },
+        () => {}
+      );
+      cast.initialize(apiConfig,
+        () => cast.requestSession(s => loadOn(s), () => {}),
+        () => {});
+    } catch {}
+  };
+
+  // Swipe gestures on the video surface:
+  // horizontal = seek ∓10s per 50px; vertical left-half = brightness (CSS filter);
+  // vertical right-half = volume. Taps are untouched (click handler still applies).
+  const onTouchStartV = e => {
+    const t = e.touches[0];
+    touchStartRef.current = {
+      x: t.clientX, y: t.clientY,
+      seekAcc: 0,
+      vol: videoRef.current?.volume ?? 1,
+      bright: brightnessRef.current,
+      moved: false,
+    };
+  };
+  const onTouchMoveV = e => {
+    const s = touchStartRef.current;
+    const video = videoRef.current;
+    if (!s || !video) return;
+    const t = e.touches[0];
+    const dx = t.clientX - s.x;
+    const dy = t.clientY - s.y;
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+    s.moved = true;
+    swipeFlagRef.current = true; // suppress the click that follows the swipe
+    const rect = video.getBoundingClientRect();
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Horizontal: seek 10s per 50px swiped
+      const steps = Math.trunc(dx / 50);
+      if (steps !== s.seekAcc) {
+        const delta = (steps - s.seekAcc) * 10;
+        s.seekAcc = steps;
+        const dur = video.duration || 0;
+        video.currentTime = Math.max(0, Math.min(dur, video.currentTime + delta));
+        showFlash(`${delta > 0 ? '+' : ''}${delta}s`);
+      }
+    } else {
+      // Vertical: left half brightness, right half volume (swipe up = more)
+      const amt = (s.y - t.clientY) / 200;
+      if (s.x < rect.left + rect.width / 2) {
+        const b = Math.max(0.3, Math.min(1.6, s.bright + amt));
+        brightnessRef.current = b;
+        setBrightness(b);
+        video.style.filter = `brightness(${b.toFixed(2)})`;
+        showFlash(`Brightness ${Math.round(b * 100)}%`);
+      } else {
+        const v = Math.max(0, Math.min(1, s.vol + amt));
+        video.volume = v;
+        setVolume(v);
+        video.muted = v === 0;
+        setIsMuted(v === 0);
+        showFlash(`Volume ${Math.round(v * 100)}%`);
+      }
+    }
+    triggerControls();
+  };
+  const onTouchEndV = () => { touchStartRef.current = null; };
 
   // Keyboard navigation shortcuts
   useEffect(() => {
@@ -368,10 +788,22 @@ export default function Player({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  const formatCountdown = ms => {
+    const total = Math.max(0, Math.round(ms / 1000));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const mm = h ? String(m).padStart(2, '0') : m;
+    return `${h ? h + ':' : ''}${mm}:${String(s).padStart(2, '0')}`;
+  };
+
   const qualities = streamList.length
     ? streamList.map(s => `${s.quality}p`)
     : ['1080p', '720p', '480p', '240p', 'Auto'];
   const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
+  const sleepOptions = [0, 15, 30, 60, 90];
+  const visibleChapters = duration > 0 ? chapters.filter(c => c.t < duration) : [];
+  const abActive = abLoop.a != null && abLoop.b != null && abLoop.b > abLoop.a;
 
   const togglePiP = async () => {
     try {
@@ -411,12 +843,15 @@ export default function Player({
             playsInline
             preload="auto"
             className="player-video-element"
-            onClick={togglePlay}
+            onClick={handleVideoClick}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
+            onEnded={handleEnded}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={e => setDuration(e.target.duration)}
-            onEnded={onEnded}
+            onTouchStart={onTouchStartV}
+            onTouchMove={onTouchMoveV}
+            onTouchEnd={onTouchEndV}
           />
 
           {!isPlaying && !isLoading && (
@@ -434,6 +869,22 @@ export default function Player({
             </div>
           )}
 
+          {/* Transient center indicator (double-tap / gestures / resume / sleep) */}
+          {flash && (
+            <div key={flash.key} className="player-flash-indicator">
+              {flash.text}
+            </div>
+          )}
+
+          {/* Subtitle cue overlay */}
+          {subsOn && activeCue && (
+            <div className="player-subtitle-overlay">
+              {activeCue.split('\n').map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
+            </div>
+          )}
+
           {/* Player Chrome Controls */}
           <div className={`player-chrome ${showControls || !isPlaying ? 'visible' : ''}`}>
             {/* Progress bar */}
@@ -448,12 +899,46 @@ export default function Player({
               >
                 <div className="player-progress-scrubber" />
               </div>
+              {visibleChapters.map((c, i) => (
+                <button
+                  key={i}
+                  className="player-chapter-marker"
+                  style={{ left: `${(c.t / duration) * 100}%` }}
+                  title={`${formatTime(c.t)} — ${c.label}`}
+                  aria-label={`Chapter: ${c.label}`}
+                  onClick={e => {
+                    e.stopPropagation();
+                    if (videoRef.current && duration) {
+                      videoRef.current.currentTime = Math.min(c.t, duration - 1);
+                      triggerControls();
+                    }
+                  }}
+                />
+              ))}
             </div>
 
             <div className="player-controls-bottom">
               <div className="player-controls-left">
                 <button onClick={togglePlay} className="player-btn" aria-label={isPlaying ? 'Pause' : 'Play'}>
                   {isPlaying ? <PauseIcon size={20} /> : <PlayIcon size={20} />}
+                </button>
+
+                <button
+                  onClick={() => { seekBy(10); showFlash('+10s'); }}
+                  className="player-btn"
+                  title="Forward 10 seconds"
+                  aria-label="Forward 10 seconds"
+                >
+                  <Forward10Icon size={20} />
+                </button>
+
+                <button
+                  onClick={toggleLoop}
+                  className={`player-btn ${isLoop ? 'active' : ''}`}
+                  title={isLoop ? 'Loop off' : 'Loop this video'}
+                  aria-label="Loop video"
+                >
+                  <LoopIcon size={19} />
                 </button>
 
                 <div className="player-volume-group">
@@ -476,6 +961,12 @@ export default function Player({
                   <span>/</span>
                   <span>{formatTime(duration)}</span>
                 </div>
+
+                {abActive && (
+                  <span className="player-ab-chip" title="A-B loop active">
+                    A-B {formatTime(abLoop.a)}–{formatTime(abLoop.b)}
+                  </span>
+                )}
               </div>
 
               <div className="player-controls-right">
@@ -525,6 +1016,62 @@ export default function Player({
                             </div>
                           </div>
                         )}
+
+                        {/* Autoplay next (synced with the sidebar toggle) */}
+                        <div className="settings-section">
+                          <div className="settings-label">Autoplay</div>
+                          <button
+                            onClick={() => onAutoplayNextChange?.(!autoplayNext)}
+                            className={`settings-toggle-row ${autoplayNext ? 'on' : ''}`}
+                          >
+                            <span>Next video</span>
+                            <span>{autoplayNext ? 'ON' : 'OFF'}</span>
+                          </button>
+                        </div>
+
+                        {/* A-B loop */}
+                        <div className="settings-section">
+                          <div className="settings-label">A-B loop</div>
+                          <div className="settings-options">
+                            <button
+                              onClick={() => setABPoint('a')}
+                              className={`settings-opt-btn ${abLoop.a != null ? 'active' : ''}`}
+                              title="Set loop start at current position"
+                            >
+                              A{abLoop.a != null ? ` ${formatTime(abLoop.a)}` : ''}
+                            </button>
+                            <button
+                              onClick={() => setABPoint('b')}
+                              className={`settings-opt-btn ${abLoop.b != null ? 'active' : ''}`}
+                              title="Set loop end at current position"
+                            >
+                              B{abLoop.b != null ? ` ${formatTime(abLoop.b)}` : ''}
+                            </button>
+                            {(abLoop.a != null || abLoop.b != null) && (
+                              <button onClick={clearAB} className="settings-opt-btn">
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Sleep timer */}
+                        <div className="settings-section">
+                          <div className="settings-label">
+                            Sleep timer{sleepTimer ? ` · ${formatCountdown(sleepRemaining)} left` : ''}
+                          </div>
+                          <div className="settings-options">
+                            {sleepOptions.map(m => (
+                              <button
+                                key={m}
+                                onClick={() => setSleep(m)}
+                                className={`settings-opt-btn ${sleepTimer === m ? 'active' : ''}`}
+                              >
+                                {m === 0 ? 'Off' : `${m}m`}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -537,6 +1084,39 @@ export default function Player({
                     title="Theater mode"
                   >
                     <span className="theater-icon-box" />
+                  </button>
+                )}
+
+                {/* Subtitles (.srt upload) */}
+                {Boolean(activeStreamUrl) && (
+                  <button
+                    onClick={() => (subCues.length ? setSubsOn(!subsOn) : subFileRef.current?.click())}
+                    className={`player-btn ${subsOn ? 'active' : ''}`}
+                    title={subCues.length ? (subsOn ? 'Hide subtitles' : 'Show subtitles') : 'Load .srt subtitles'}
+                    aria-label="Subtitles"
+                  >
+                    <CaptionsIcon size={19} />
+                  </button>
+                )}
+                <input
+                  ref={subFileRef}
+                  type="file"
+                  accept=".srt"
+                  style={{ display: 'none' }}
+                  onChange={handleSubFile}
+                  aria-hidden="true"
+                  tabIndex={-1}
+                />
+
+                {/* Chromecast (only when the sender SDK is usable) */}
+                {castReady && Boolean(activeStreamUrl) && (
+                  <button
+                    onClick={startCast}
+                    className="player-btn"
+                    title="Cast to TV"
+                    aria-label="Cast to TV"
+                  >
+                    <CastIcon size={19} />
                   </button>
                 )}
 
