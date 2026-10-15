@@ -19,7 +19,9 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
+import { execSync, execFile } from 'child_process';
+import { promisify } from 'util';
+const execFileAsync = promisify(execFile);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -50,10 +52,12 @@ function extractMp4Token(html) {
 
 async function fetchPage(id) {
   // Try curl first (most reliable TLS fingerprint), then node fetch.
+  // curl runs via async execFile so the worker pool actually parallelizes.
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const html = execSync(
-        `curl -sL --max-time 25 -A "${UA}" -H "Referer: https://www.google.com/" "https://www.redtube.com/${id}"`,
+      const { stdout: html } = await execFileAsync(
+        'curl',
+        ['-sL', '--max-time', '25', '-A', UA, '-H', 'Referer: https://www.google.com/', `https://www.redtube.com/${id}`],
         { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, timeout: 30000 }
       );
       if (html && html.length > 100000) return html;
@@ -127,6 +131,20 @@ async function feedIds() {
     } catch (e) { console.error('feed fail', e.message); }
     await sleep(400);
   }
+  // NEWEST CATALOG VIDEOS: the site's feeds are date-first, so the videos users
+  // actually click are the newest catalog entries — the API searches above miss
+  // them. Include the ~80 most recently added so their streams stay fresh.
+  try {
+    const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'public', 'catalog.json'), 'utf8'));
+    const newest = Object.entries(catalog)
+      .filter(([, v]) => v && v.added)
+      .sort((a, b) => (b[1].added > a[1].added ? 1 : -1))
+      .slice(0, 80)
+      .map(([k]) => String(k).replace(/\D/g, ''))
+      .filter(Boolean);
+    for (const id of newest) ids.add(id);
+    console.log(`+ ${newest.length} newest catalog videos`);
+  } catch (e) { console.error('catalog newest fail', e.message); }
   return [...ids];
 }
 
@@ -139,14 +157,19 @@ async function main() {
   console.log(`feed videos: ${ids.length}`);
 
   let tNew = 0, sNew = 0, tFail = 0, sFail = 0;
-  for (const id of ids) {
+  // Worker pool: Redtube page fetches are I/O-bound (curl up to 25s x 3
+  // attempts). Sequential processing of ~350 feed videos exceeded the 30-min
+  // cron budget and every run timed out, letting all stream entries go stale
+  // (>100min -> /api/stream 404s -> site-wide playback outage). 8 parallel
+  // workers bring a full pass down to a few minutes.
+  const CONC = 8;
+  async function processOne(id) {
     // thumbs (refresh >40min old; pix-cdn77 validto ~1h)
     const te = thumbs[id];
     if (!te?.url || now - (te.ts || 0) > 40 * 60 * 1000) {
       const url = await resolveThumb(id);
       if (url) { thumbs[id] = { url, ts: now }; tNew++; }
       else tFail++;
-      await sleep(500);
     }
     // streams (refresh >90min old; mp4 validto ~2h)
     const se = streams[id];
@@ -154,9 +177,16 @@ async function main() {
       const qualities = await resolveStreams(id);
       if (qualities) { streams[id] = { qualities, ts: now }; sNew++; }
       else sFail++;
-      await sleep(500);
     }
   }
+  const queue = [...ids];
+  await Promise.all(Array.from({ length: CONC }, async () => {
+    while (queue.length) {
+      const id = queue.shift();
+      try { await processOne(id); }
+      catch (e) { console.error('process fail', id, e.message); }
+    }
+  }));
   // prune week-old entries
   for (const [map, name] of [[thumbs, 'thumbs'], [streams, 'streams']]) {
     for (const id of Object.keys(map)) {
@@ -180,8 +210,9 @@ async function main() {
   if (PUSH) {
     const st = execSync('git status --porcelain public/thumbs.json public/streams.json public/hd1080.json', { cwd: ROOT, encoding: 'utf8' }).trim();
     if (!st) { console.log('no changes to push'); return; }
+    // NOTE: gh.py needs PYTHONPATH (its hard-coded sys.path no longer exists in current deployments)
     const out = execSync(
-      `python3 ${GH} push --repo ${REPO} --message "media sync: thumbs+streams (${Object.keys(streams).length} streams)" --dir ${ROOT} --auto`,
+      `PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 ${GH} push --repo ${REPO} --message "media sync: thumbs+streams (${Object.keys(streams).length} streams)" --dir ${ROOT} --auto`,
       { encoding: 'utf8', timeout: 120000 }
     );
     console.log(out.trim());
