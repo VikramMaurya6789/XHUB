@@ -2673,3 +2673,6 @@ fatal: expected flush after ref listing
 [2026-10-15T21:42:33.210Z] progress 800/800
 [2026-10-15T21:42:33.213Z] progress 800/800
 [2026-10-15T21:42:33.765Z] merged 1893 worker part entries
+[2026-10-15T22:01:08.641Z] batch: 800 videos (0 pending, 15810 stale available)
+[2026-10-15T22:02:20.587Z] progress 100/800
+[2026-10-15T22:02:26.411Z] progress 500/1400

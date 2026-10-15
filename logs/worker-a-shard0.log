@@ -1,0 +1,12 @@
+=== worker-a run started 2026-10-15T21:42:39Z ===
+error: patch failed: scripts/refresh-cycle.mjs:3
+error: scripts/refresh-cycle.mjs: patch does not apply
+error: patch failed: app/api/stream/route.js:25
+error: app/api/stream/route.js: patch does not apply
+[2026-10-15T21:42:47.444Z] worker shard 0/2 batch: 915 videos (0 pending, 15318 stale available)
+[2026-10-15T21:43:43.171Z] progress 100/915
+[2026-10-15T21:45:05.278Z] progress 200/915
+[2026-10-15T21:47:11.481Z] progress 300/915
+[2026-10-15T21:48:44.881Z] progress 400/915
+[2026-10-15T21:50:46.457Z] progress 500/915
+[2026-10-15T21:52:54.821Z] progress 600/915
