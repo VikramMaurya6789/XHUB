@@ -18,7 +18,8 @@ export default function Player({
   poster,
   title,
   onTheaterToggle,
-  isTheater = false
+  isTheater = false,
+  onStreamError,
 }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -138,6 +139,9 @@ export default function Player({
       video.addEventListener('error', () => {
         streamFailedRef.current = true;
         setStreamError(true);
+        // Notify parent to auto-retry with fresh streams (token may have expired;
+        // the batch refreshes every 10 min, so a retry often succeeds).
+        try { onStreamError?.(); } catch {}
       });
     } else {
       video.src = activeStreamUrl;
@@ -156,6 +160,7 @@ export default function Player({
       video.addEventListener('error', () => {
         streamFailedRef.current = true;
         setStreamError(true);
+        try { onStreamError?.(); } catch {}
       });
     }
 

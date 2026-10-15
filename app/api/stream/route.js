@@ -25,13 +25,13 @@ export async function GET(req) {
       return NextResponse.json({ vkey: id, qualities: [], error: 'no streams yet', retry: true }, { status: 404 });
     }
 
-    // Reject stale streams (Redtube URLs stay valid ~2h; the refresh fleet keeps
-    // every entry under ~110 min old, this 120-min cutoff is the safety margin).
-    // If stale, tell client to retry — the sync will refresh it.
+    // Don't 404 on stale streams — return them anyway with a stale flag.
+    // The vproxy auto-retries with a fresh token on 403/410, and the player
+    // auto-retries /api/stream if playback fails. A 404 here used to leave
+    // videos stuck on "Resolving HD stream…" forever when the batch fell behind.
+    // Stale data is better than no data; the refresh fleet catches up.
     const ageMin = (Date.now() - (entry.ts || 0)) / 60000;
-    if (ageMin > 120) {
-      return NextResponse.json({ vkey: id, qualities: [], error: 'streams refreshing', retry: true }, { status: 404 });
-    }
+    const isStale = ageMin > 120;
 
     // Default: 720p if available, else highest below it, else first.
     const order = ['1080', '720', '480', '240'];
@@ -44,7 +44,7 @@ export async function GET(req) {
       sorted[0];
 
     return NextResponse.json(
-      { vkey: id, qualities: sorted, defaultQuality: def.quality, resolvedAt: entry.ts },
+      { vkey: id, qualities: sorted, defaultQuality: def.quality, resolvedAt: entry.ts, stale: isStale, retry: isStale },
       { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200' } }
     );
   } catch (e) {
