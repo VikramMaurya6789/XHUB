@@ -126,8 +126,8 @@ async function main() {
       if (st) {
         execSync('git add public/streams.json public/hd1080.json', { cwd: ROOT });
         execSync(`git -c user.name="RoyalPlayzYT" -c user.email="royal@example.com" commit -q -m "verify: +${verified} 1080p videos from catalog"`, { cwd: ROOT });
-        // push via gh.py
-        execSync(`python3 /home/hatch/workspace/skills/github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "verify: +${verified} 1080p videos" --dir ${ROOT} --auto`, { timeout: 120000 });
+        // push via gh.py (PYTHONPATH workaround for dynamic_credentials module, see AGENTS.md 2026-10-15)
+        execSync(`PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/skills/github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "verify: +${verified} 1080p videos" --dir ${ROOT} --auto`, { timeout: 120000 });
         console.log('pushed');
       }
     } catch (e) {
