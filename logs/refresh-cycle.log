@@ -987,3 +987,8 @@ fatal: expected flush after ref listing
 [2026-10-15T16:48:15.089Z] progress 300/800
 [2026-10-15T16:48:42.914Z] progress 400/800
 [2026-10-15T16:49:10.098Z] progress 500/800
+[2026-10-15T16:52:26.624Z] worker shard 0/2 batch: 1400 videos (0 pending, 23955 stale available)
+[2026-10-15T16:52:51.274Z] progress 200/800
+[2026-10-15T16:53:51.233Z] progress 300/1400
+[2026-10-15T16:53:55.648Z] progress 100/1400
+[2026-10-15T16:54:33.918Z] progress 300/800
