@@ -979,3 +979,4 @@ fatal: expected flush after ref listing
 [2026-10-15T16:40:55.328Z] progress 700/1400
 [2026-10-15T16:41:06.195Z] progress 1300/1400
 [2026-10-15T16:42:21.093Z] progress 800/1400
+[2026-10-15T16:47:02.790Z] batch: 800 videos (0 pending, 23955 stale available)
