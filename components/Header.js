@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { SearchIcon, UserIcon, ClockIcon, HistoryIcon, FlameIcon, StarIcon, SparklesIcon, FilmIcon, BookmarkIcon, EyeOffIcon } from './Icons';
+import { SearchIcon, UserIcon, ClockIcon, HistoryIcon, FlameIcon, StarIcon, SparklesIcon, FilmIcon, BookmarkIcon, EyeOffIcon, LockIcon } from './Icons';
 import SearchAutocomplete from './SearchAutocomplete';
 import { isHideWatchedOn, setHideWatched } from '@/lib/discovery';
+import { PARENTAL_EVENT, isParentalLocked } from '@/lib/parental';
 
 export default function Header() {
   const pathname = usePathname();
@@ -29,6 +30,19 @@ export default function Header() {
     setHideWatchedState(next);
     setHideWatched(next);
   };
+
+  // Parental lock badge: shown when the PIN lock is on
+  const [parentalLocked, setParentalLocked] = useState(false);
+  useEffect(() => {
+    const refresh = () => setParentalLocked(isParentalLocked());
+    refresh();
+    window.addEventListener(PARENTAL_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener(PARENTAL_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
 
   const navItems = [
     { label: 'Videos', href: '/', exact: true },
@@ -64,6 +78,28 @@ export default function Header() {
           <SearchAutocomplete />
 
           <div className="header-actions">
+            {parentalLocked && (
+              <Link
+                href="/parental-controls"
+                title="Parental lock is on — blocked categories are filtered"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  color: '#2ecc71',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  padding: '0.4rem 0.7rem',
+                  border: '1px solid rgba(46,204,113,0.45)',
+                  borderRadius: '999px',
+                  background: 'rgba(46,204,113,0.1)',
+                }}
+              >
+                <LockIcon size={14} />
+                <span>Locked</span>
+              </Link>
+            )}
             <button
               type="button"
               onClick={toggleHideWatched}

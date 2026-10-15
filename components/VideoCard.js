@@ -5,6 +5,7 @@ import { BadgeCheckIcon, StarIcon, ClockIcon, PlayIcon, CheckIcon, HeartIcon, Li
 import PlaylistModal from './PlaylistModal';
 import { isLiked, toggleLiked } from '@/lib/library';
 import { hideVkey, isVkeyHidden } from '@/lib/discovery';
+import { PARENTAL_EVENT, getBlockedSlugs, videoInBlockedCategory } from '@/lib/parental';
 
 export default function VideoCard({ video, priority = false }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -37,7 +38,29 @@ export default function VideoCard({ video, priority = false }) {
     return () => window.removeEventListener('xhub:hidden-changed', onChange);
   }, [cardVkey]);
 
-  if (!video || isHiddenCard) return null;
+  // Parental controls: hide this card when the video matches a blocked
+  // category while the PIN lock is on (applies to every feed site-wide).
+  const [parentallyBlocked, setParentallyBlocked] = useState(false);
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        setParentallyBlocked(
+          video ? getBlockedSlugs().some(slug => videoInBlockedCategory(video, slug)) : false
+        );
+      } catch {
+        setParentallyBlocked(false);
+      }
+    };
+    refresh();
+    window.addEventListener(PARENTAL_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener(PARENTAL_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, [video]);
+
+  if (!video || isHiddenCard || parentallyBlocked) return null;
 
   const vkey = video.vkey || video.id;
   const watchUrl = `/watch/${encodeURIComponent(vkey)}`;
