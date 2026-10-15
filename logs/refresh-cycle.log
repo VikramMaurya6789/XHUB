@@ -543,3 +543,46 @@
 [2026-10-15T14:46:36.843Z] progress 800/800
 [2026-10-15T14:46:36.848Z] progress 800/800
 [2026-10-15T14:46:36.983Z] progress 800/800
+[2026-10-15T14:54:03.173Z] batch: 800 videos (0 pending, 22291 stale available)
+[2026-10-15T14:54:22.557Z] progress 100/800
+[2026-10-15T14:54:40.403Z] progress 200/800
+[2026-10-15T14:54:59.640Z] progress 300/800
+[2026-10-15T14:55:18.588Z] progress 400/800
+[2026-10-15T14:55:37.659Z] progress 500/800
+[2026-10-15T14:55:56.636Z] progress 600/800
+[2026-10-15T14:56:15.757Z] progress 700/800
+[2026-10-15T14:56:35.187Z] git pull failed: Command failed: git fetch -q origin && git reset -q --hard origin/main
+error: RPC failed; curl 56 Connection died, tried 5 times before giving up
+fatal: expected flush after ref listing
+
+[2026-10-15T14:56:36.824Z] progress 800/800
+[2026-10-15T14:56:36.828Z] progress 800/800
+[2026-10-15T14:56:37.082Z] batch: 800 videos (0 pending, 22951 stale available)
+[2026-10-15T14:56:37.682Z] progress 800/800
+[2026-10-15T14:56:37.830Z] progress 800/800
+[2026-10-15T14:56:38.106Z] progress 800/800
+[2026-10-15T14:56:38.274Z] progress 800/800
+[2026-10-15T14:56:38.399Z] progress 800/800
+[2026-10-15T14:56:38.400Z] progress 800/800
+[2026-10-15T14:56:38.745Z] progress 800/800
+[2026-10-15T14:56:39.642Z] progress 800/800
+[2026-10-15T14:56:40.135Z] progress 800/800
+[2026-10-15T14:56:40.138Z] progress 800/800
+[2026-10-15T14:56:40.225Z] progress 800/800
+[2026-10-15T14:56:40.226Z] progress 800/800
+[2026-10-15T14:56:40.792Z] progress 800/800
+[2026-10-15T14:56:40.986Z] progress 800/800
+[2026-10-15T14:56:40.992Z] progress 800/800
+[2026-10-15T14:56:42.175Z] progress 800/800
+[2026-10-15T14:56:42.254Z] progress 800/800
+[2026-10-15T14:56:42.511Z] progress 800/800
+[2026-10-15T14:56:42.675Z] progress 800/800
+[2026-10-15T14:56:42.813Z] progress 800/800
+[2026-10-15T14:56:42.909Z] progress 800/800
+[2026-10-15T14:56:44.073Z] progress 800/800
+[2026-10-15T14:56:58.134Z] progress 100/800
+[2026-10-15T14:57:19.174Z] progress 200/800
+[2026-10-15T14:57:45.344Z] progress 300/800
+[2026-10-15T14:58:16.657Z] progress 400/800
+[2026-10-15T14:58:28.997Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 659 streams, 662 thumbs (25591 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-15T14:58:29.009Z] done in 271s: 659 streams, 662 thumbs
