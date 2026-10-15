@@ -2014,3 +2014,53 @@ fatal: expected flush after ref listing
 [2026-10-15T19:34:11.503Z] progress 800/800
 [2026-10-15T19:34:11.680Z] merged 1887 worker part entries
 [2026-10-15T19:36:46.750Z] batch: 800 videos (0 pending, 14074 stale available)
+[2026-10-15T19:39:51.046Z] worker shard 0/2 batch: 491 videos (0 pending, 14440 stale available)
+[2026-10-15T19:40:30.668Z] progress 500/800
+[2026-10-15T19:40:50.692Z] progress 500/1400
+[2026-10-15T19:40:54.937Z] progress 100/491
+[2026-10-15T19:42:03.911Z] progress 600/800
+[2026-10-15T19:42:19.273Z] progress 600/1400
+[2026-10-15T19:42:36.068Z] progress 200/491
+[2026-10-15T19:43:23.911Z] progress 700/800
+[2026-10-15T19:43:39.649Z] progress 700/1400
+[2026-10-15T19:44:06.721Z] progress 300/491
+[2026-10-15T19:44:43.122Z] progress 800/800
+[2026-10-15T19:44:43.715Z] progress 800/800
+[2026-10-15T19:44:52.377Z] progress 800/800
+[2026-10-15T19:44:52.397Z] progress 800/800
+[2026-10-15T19:44:52.578Z] progress 800/800
+[2026-10-15T19:44:52.584Z] progress 800/800
+[2026-10-15T19:44:52.839Z] progress 800/800
+[2026-10-15T19:44:52.843Z] progress 800/800
+[2026-10-15T19:44:52.844Z] progress 800/800
+[2026-10-15T19:44:53.055Z] progress 800/800
+[2026-10-15T19:44:53.056Z] progress 800/800
+[2026-10-15T19:44:53.056Z] progress 800/800
+[2026-10-15T19:44:53.131Z] progress 800/800
+[2026-10-15T19:44:53.134Z] progress 800/800
+[2026-10-15T19:44:55.273Z] progress 800/800
+[2026-10-15T19:44:55.823Z] progress 800/800
+[2026-10-15T19:44:56.322Z] progress 800/800
+[2026-10-15T19:44:56.325Z] progress 800/800
+[2026-10-15T19:44:56.340Z] progress 800/800
+[2026-10-15T19:44:56.366Z] progress 800/1400
+[2026-10-15T19:44:56.787Z] progress 800/800
+[2026-10-15T19:44:56.834Z] progress 800/800
+[2026-10-15T19:44:57.027Z] progress 800/800
+[2026-10-15T19:44:57.646Z] progress 800/800
+[2026-10-15T19:44:59.071Z] progress 800/800
+[2026-10-15T19:44:59.176Z] progress 800/800
+[2026-10-15T19:44:59.340Z] progress 800/800
+[2026-10-15T19:45:06.802Z] progress 800/800
+[2026-10-15T19:45:07.360Z] progress 800/800
+[2026-10-15T19:45:09.607Z] progress 400/491
+[2026-10-15T19:45:12.643Z] progress 800/800
+[2026-10-15T19:45:14.421Z] progress 800/800
+[2026-10-15T19:45:14.791Z] progress 800/800
+[2026-10-15T19:45:15.893Z] progress 800/800
+[2026-10-15T19:45:33.752Z] progress 900/1400
+[2026-10-15T19:46:05.900Z] progress 1000/1400
+[2026-10-15T19:46:26.743Z] progress 1100/1400
+[2026-10-15T19:46:38.395Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 792 streams, 793 thumbs (17479 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-15T19:46:38.396Z] done in 593s: 792 streams, 793 thumbs
+[2026-10-15T19:46:47.810Z] progress 1200/1400
