@@ -1853,3 +1853,19 @@ fatal: expected flush after ref listing
 [2026-10-15T19:05:25.802Z] progress 800/800
 [2026-10-15T19:05:25.845Z] progress 800/800
 [2026-10-15T19:05:25.853Z] progress 800/800
+[2026-10-15T19:05:27.682Z] progress 800/800
+[2026-10-15T19:05:27.857Z] progress 800/800
+[2026-10-15T19:05:27.980Z] progress 800/800
+[2026-10-15T19:05:27.988Z] progress 800/800
+[2026-10-15T19:05:28.034Z] progress 800/800
+[2026-10-15T19:05:28.095Z] progress 800/800
+[2026-10-15T19:05:28.111Z] progress 800/800
+[2026-10-15T19:05:28.144Z] progress 800/800
+[2026-10-15T19:05:28.145Z] progress 800/800
+[2026-10-15T19:05:28.195Z] merged 1867 worker part entries
+[2026-10-15T19:05:32.896Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-0: 1267 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-0.json
+[2026-10-15T19:05:32.896Z] done in 864s: 1267 streams (shard 0/2)
+[2026-10-15T19:05:51.897Z] push ok: https://github.com/VikramMaurya6789/XHUB/commit/52a77583694651651ff77489b486b36d920de8b0
+[2026-10-15T19:05:51.897Z] done in 912s: 1390 streams (shard 1/2)
+[2026-10-15T19:05:59.580Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 791 streams, 798 thumbs (17434 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-15T19:05:59.580Z] done in 703s: 791 streams, 798 thumbs
