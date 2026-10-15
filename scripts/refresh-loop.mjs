@@ -59,6 +59,10 @@ try {
 fs.writeFileSync(LOCK_FILE, String(process.pid));
 process.on('exit', () => { try { fs.unlinkSync(LOCK_FILE); } catch {} });
 process.on('SIGTERM', () => process.exit(0));
+// Never die silently: log the reason (OOM/native abort still bypasses this,
+// but JS-level failures get recorded).
+process.on('uncaughtException', e => { try { log('UNCAUGHT:', e && e.stack || e); } catch {} process.exit(1); });
+process.on('unhandledRejection', e => { try { log('UNHANDLED REJECTION:', e && e.stack || e); } catch {} });
 
 function extractOgImage(html) {
   const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)

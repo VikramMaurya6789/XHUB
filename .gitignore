@@ -9,3 +9,4 @@ yarn-error.log*
 # refresh loop runtime files
 scripts/.refresh-loop.lock
 logs/refresh-loop.log
+logs/refresh-loop.err.log
