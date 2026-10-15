@@ -1,9 +1,10 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { BadgeCheckIcon, StarIcon, ClockIcon, PlayIcon, CheckIcon, HeartIcon, ListPlusIcon } from './Icons';
+import { BadgeCheckIcon, StarIcon, ClockIcon, PlayIcon, CheckIcon, HeartIcon, ListPlusIcon, XIcon } from './Icons';
 import PlaylistModal from './PlaylistModal';
 import { isLiked, toggleLiked } from '@/lib/library';
+import { hideVkey, isVkeyHidden } from '@/lib/discovery';
 
 export default function VideoCard({ video, priority = false }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -24,7 +25,19 @@ export default function VideoCard({ video, priority = false }) {
     }
   }, [video]);
 
-  if (!video) return null;
+  // Discovery "Not interested": hide self if already hidden, and react to
+  // hide events from any card so feeds stay in sync.
+  const [isHiddenCard, setIsHiddenCard] = useState(false);
+  const cardVkey = video ? String(video.vkey || video.id || '') : '';
+  useEffect(() => {
+    if (typeof window === 'undefined' || !cardVkey) return;
+    setIsHiddenCard(isVkeyHidden(cardVkey));
+    const onChange = () => setIsHiddenCard(isVkeyHidden(cardVkey));
+    window.addEventListener('xhub:hidden-changed', onChange);
+    return () => window.removeEventListener('xhub:hidden-changed', onChange);
+  }, [cardVkey]);
+
+  if (!video || isHiddenCard) return null;
 
   const vkey = video.vkey || video.id;
   const watchUrl = `/watch/${encodeURIComponent(vkey)}`;
@@ -89,6 +102,14 @@ export default function VideoCard({ video, priority = false }) {
       }
       localStorage.setItem('xhub_watch_later', JSON.stringify(updated));
     } catch {}
+  };
+
+  // Discovery "Not interested": persist vkey and unmount this card.
+  const handleHideCard = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    hideVkey(vkey);
+    setIsHiddenCard(true);
   };
 
   // Library: liked-videos heart toggle (localStorage xhub_liked).
@@ -204,6 +225,17 @@ export default function VideoCard({ video, priority = false }) {
           aria-label="Save to Watch Later"
         >
           {isSaved ? <CheckIcon size={14} /> : <ClockIcon size={14} />}
+        </button>
+
+        {/* Discovery "Not interested" hide button (visible on hover, sibling of <a>) */}
+        <button
+          type="button"
+          onClick={handleHideCard}
+          className="card-hide-btn"
+          title="Not interested — hide this video"
+          aria-label="Not interested"
+        >
+          <XIcon size={14} />
         </button>
 
         {/* Library: liked heart button (sibling, NOT inside <a>) */}

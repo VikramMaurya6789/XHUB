@@ -1,20 +1,33 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { SearchIcon, UserIcon, ClockIcon, HistoryIcon, FlameIcon, StarIcon, SparklesIcon, FilmIcon, BookmarkIcon } from './Icons';
+import { SearchIcon, UserIcon, ClockIcon, HistoryIcon, FlameIcon, StarIcon, SparklesIcon, FilmIcon, BookmarkIcon, EyeOffIcon } from './Icons';
+import SearchAutocomplete from './SearchAutocomplete';
+import { isHideWatchedOn, setHideWatched } from '@/lib/discovery';
 
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const [query, setQuery] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  const handleSearch = e => {
-    e.preventDefault();
-    if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-    }
+  // Hide-watched toggle: persisted in localStorage, feeds re-filter on change
+  const [hideWatched, setHideWatchedState] = useState(false);
+  useEffect(() => {
+    setHideWatchedState(isHideWatchedOn());
+    const sync = () => setHideWatchedState(isHideWatchedOn());
+    window.addEventListener('xhub:hide-watched-changed', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('xhub:hide-watched-changed', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+
+  const toggleHideWatched = () => {
+    const next = !hideWatched;
+    setHideWatchedState(next);
+    setHideWatched(next);
   };
 
   const navItems = [
@@ -48,21 +61,20 @@ export default function Header() {
             <span className="logo-text">HUB</span>
           </Link>
 
-          <form onSubmit={handleSearch} className="search-form">
-            <SearchIcon className="search-icon" size={17} />
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search videos, categories, models..."
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-            <button type="submit" className="search-btn-icon" aria-label="Search">
-              <SearchIcon size={14} />
-            </button>
-          </form>
+          <SearchAutocomplete />
 
           <div className="header-actions">
+            <button
+              type="button"
+              onClick={toggleHideWatched}
+              className={`hide-watched-toggle ${hideWatched ? 'active' : ''}`}
+              title={hideWatched ? 'Show watched videos again' : 'Hide videos you have already watched'}
+              aria-pressed={hideWatched}
+            >
+              <EyeOffIcon size={15} />
+              <span>{hideWatched ? 'Watched hidden' : 'Hide watched'}</span>
+            </button>
+
             <div className="lang-picker-stub" title="Language: English (US)">
               <span>EN</span>
             </div>
