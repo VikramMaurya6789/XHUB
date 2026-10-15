@@ -13,6 +13,11 @@
  * now just a watchdog that restarts this loop if dead — it must NOT run
  * sync-media.mjs concurrently (it would clobber unpushed work via reset --hard).
  *
+ * Parallel speedup: scripts/resolve-shard.mjs agents resolve backlog shards and
+ * write public/streams-shard-<i>.json. This loop merges those files into
+ * streams.json on every pass (after git pull) and pushes them — the agents
+ * never touch streams.json or git themselves.
+ *
  * Usage: node scripts/refresh-loop.mjs   (run under nohup; logs to logs/refresh-loop.log)
  */
 import fs from 'fs';
@@ -35,10 +40,36 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 const API = 'https://api.redtube.com/';
 const REPO = 'VikramMaurya6789/XHUB';
 const GH = '/home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py';
-const CONC = 24;
+const CONC = 40;
 const STREAM_REFRESH_MIN = 60;   // refresh streams older than this (route rejects >100)
 const THUMB_REFRESH_MIN = 40;
 const PUSH_EVERY_MS = 5 * 60 * 1000;
+
+// Parallel shard-resolver outputs (written by resolve-shard.mjs agents).
+function shardFiles() {
+  try {
+    return fs.readdirSync(path.join(ROOT, 'public'))
+      .filter(f => /^streams-shard-\d+\.json$/.test(f))
+      .map(f => `public/${f}`);
+  } catch { return []; }
+}
+function mergeShards(streams) {
+  let n = 0;
+  for (const f of shardFiles()) {
+    try {
+      const extra = load(path.join(ROOT, f));
+      for (const [id, e] of Object.entries(extra)) {
+        if (!e?.qualities?.length) continue;
+        const cur = streams[id];
+        if (!cur?.qualities?.length || (e.ts || 0) > (cur.ts || 0)) {
+          streams[id] = e;
+          n++;
+        }
+      }
+    } catch (err) { log('shard merge fail', f, err.message); }
+  }
+  return n;
+}
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const load = p => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return {}; } };
@@ -154,11 +185,12 @@ function writeFiles(streams, thumbs, hd1080) {
   return hd;
 }
 function push(msg, maps) {
+  const files = ['public/streams.json', 'public/thumbs.json', 'public/hd1080.json', ...shardFiles()];
   const tryPush = () => {
-    const st = execSync('git status --porcelain public/streams.json public/thumbs.json public/hd1080.json', { cwd: ROOT, encoding: 'utf8' }).trim();
+    const st = execSync(`git status --porcelain ${files.join(' ')}`, { cwd: ROOT, encoding: 'utf8' }).trim();
     if (!st) return 'clean';
     const out = execSync(
-      `PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 ${GH} push --repo ${REPO} --message "${msg}" --dir ${ROOT} --auto public/streams.json public/thumbs.json public/hd1080.json`,
+      `PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 ${GH} push --repo ${REPO} --message "${msg}" --dir ${ROOT} --auto ${files.join(' ')}`,
       { encoding: 'utf8', timeout: 180000 }
     );
     return out.trim().split('\n').pop();
@@ -195,6 +227,10 @@ async function pass() {
   const thumbs = load(THUMBS_FILE);
   const hd1080 = load(HD1080_FILE);
   const catalog = load(CATALOG_FILE);
+
+  // Merge parallel shard-resolver outputs first (fresh agent work wins).
+  const merged = mergeShards(streams);
+  if (merged) log(`merged ${merged} shard entries`);
 
   // Newest catalog videos missing from streams (cap 300) — heals discovery gap.
   let addedNew = 0;
