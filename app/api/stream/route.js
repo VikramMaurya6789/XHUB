@@ -25,10 +25,11 @@ export async function GET(req) {
       return NextResponse.json({ vkey: id, qualities: [], error: 'no streams yet', retry: true }, { status: 404 });
     }
 
-    // Reject stale streams (URLs valid ~2h; cron refreshes every 30min).
+    // Reject stale streams (Redtube URLs stay valid ~2h; the refresh fleet keeps
+    // every entry under ~110 min old, this 120-min cutoff is the safety margin).
     // If stale, tell client to retry — the sync will refresh it.
     const ageMin = (Date.now() - (entry.ts || 0)) / 60000;
-    if (ageMin > 100) {
+    if (ageMin > 120) {
       return NextResponse.json({ vkey: id, qualities: [], error: 'streams refreshing', retry: true }, { status: 404 });
     }
 
