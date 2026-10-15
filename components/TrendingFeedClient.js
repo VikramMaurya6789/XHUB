@@ -1,11 +1,19 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import VideoCard from '@/components/VideoCard';
+import { filterDiscoveryVideos, useDiscoveryVersion } from '@/lib/discovery';
 
 export default function TrendingFeedClient({ initialVideos = [] }) {
+  const discoveryVersion = useDiscoveryVersion();
   const [videos, setVideos] = useState(initialVideos);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
+
+  // Discovery: filter "not interested" + watched-hidden videos on render.
+  const shownVideos = useMemo(
+    () => filterDiscoveryVideos(videos),
+    [videos, discoveryVersion]
+  );
 
   const handleLoadMore = async () => {
     setLoadingMore(true);
@@ -27,7 +35,7 @@ export default function TrendingFeedClient({ initialVideos = [] }) {
   return (
     <>
       <div className="dense-video-grid">
-        {videos.map(video => (
+        {shownVideos.map(video => (
           <VideoCard key={video.vkey || video.id} video={video} />
         ))}
       </div>

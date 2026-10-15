@@ -31,7 +31,7 @@ export default async function BestVideosPage() {
           </p>
         </div>
 
-        <SectionFeedClient initialVideos={initialVideos} section="best" />
+        <SectionFeedClient initialVideos={initialVideos} section="best" showFilters={true} />
       </main>
       <Footer />
     </>

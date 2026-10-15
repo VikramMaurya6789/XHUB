@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
@@ -31,6 +32,7 @@ import {
 } from '@/components/Icons';
 
 export default function WatchClient({ vkey, initialVideo = null, initialError = null }) {
+  const router = useRouter();
   const [video, setVideo] = useState(initialVideo);
   const [loading, setLoading] = useState(!initialVideo && !initialError);
   const [error, setError] = useState(initialError);
@@ -363,6 +365,16 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
       ? `/watch/${encodeURIComponent(playlistQueue.vkeyList[playlistQueue.index + 1])}?playlist=${encodeURIComponent(playlistId)}`
       : null;
 
+  // Library: playlist "play all" — advance to the next video when this one ends.
+  // Returns true when it navigated (Player skips its built-in autoplay then).
+  const handlePlaylistEnded = () => {
+    if (playlistNextUrl && autoplayNext) {
+      router.push(playlistNextUrl);
+      return true;
+    }
+    return false;
+  };
+
   if (error) {
     return (
       <>
@@ -441,6 +453,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
             title={video.title}
             isTheater={isTheater}
             onTheaterToggle={() => setIsTheater(!isTheater)}
+            onEnded={handlePlaylistEnded}
             description={video.description}
             nextUrl={
               // Library: playlist "play all" overrides the default up-next target.

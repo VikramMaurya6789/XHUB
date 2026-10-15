@@ -1,15 +1,28 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { BadgeCheckIcon, StarIcon, ClockIcon, PlayIcon, CheckIcon } from './Icons';
+import { BadgeCheckIcon, StarIcon, ClockIcon, PlayIcon, CheckIcon, HeartIcon, ListPlusIcon } from './Icons';
+import PlaylistModal from './PlaylistModal';
+import { isLiked, toggleLiked } from '@/lib/library';
 
 export default function VideoCard({ video, priority = false }) {
   const [isHovered, setIsHovered] = useState(false);
   const [thumbIndex, setThumbIndex] = useState(0);
   const [isSaved, setIsSaved] = useState(false);
+  const [isLikedState, setIsLikedState] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const hoverTimeoutRef = useRef(null);
   const scrubIntervalRef = useRef(null);
   const videoRef = useRef(null);
+
+  // Library: sync liked state for the hover heart button.
+  useEffect(() => {
+    try {
+      setIsLikedState(isLiked(video?.vkey || video?.id));
+    } catch {
+      setIsLikedState(false);
+    }
+  }, [video]);
 
   if (!video) return null;
 
@@ -76,6 +89,21 @@ export default function VideoCard({ video, priority = false }) {
       }
       localStorage.setItem('xhub_watch_later', JSON.stringify(updated));
     } catch {}
+  };
+
+  // Library: liked-videos heart toggle (localStorage xhub_liked).
+  const handleToggleLiked = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      setIsLikedState(toggleLiked(video));
+    } catch {}
+  };
+
+  const handleOpenPlaylist = e => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowPlaylistModal(true);
   };
 
   const proxyThumbUrl = video.thumb?.startsWith('/api/thumb')
@@ -177,7 +205,34 @@ export default function VideoCard({ video, priority = false }) {
         >
           {isSaved ? <CheckIcon size={14} /> : <ClockIcon size={14} />}
         </button>
+
+        {/* Library: liked heart button (sibling, NOT inside <a>) */}
+        <button
+          type="button"
+          onClick={handleToggleLiked}
+          className={`card-lib-btn card-like-btn ${isLikedState ? 'active' : ''}`}
+          title={isLikedState ? 'Liked' : 'Like this video'}
+          aria-label="Like video"
+        >
+          <HeartIcon size={14} filled={isLikedState} />
+        </button>
+
+        {/* Library: add-to-playlist button (sibling, NOT inside <a>) */}
+        <button
+          type="button"
+          onClick={handleOpenPlaylist}
+          className="card-lib-btn card-playlist-btn"
+          title="Save to playlist"
+          aria-label="Save to playlist"
+        >
+          <ListPlusIcon size={14} />
+        </button>
       </div>
+
+      {/* Library: playlist picker modal */}
+      {showPlaylistModal && (
+        <PlaylistModal video={video} onClose={() => setShowPlaylistModal(false)} />
+      )}
 
       {/* Details section */}
       <Link href={watchUrl} className="card-details-link">

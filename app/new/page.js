@@ -31,7 +31,7 @@ export default async function NewVideosPage() {
           </p>
         </div>
 
-        <SectionFeedClient initialVideos={initialVideos} section="new" />
+        <SectionFeedClient initialVideos={initialVideos} section="new" showFilters={true} />
       </main>
       <Footer />
     </>

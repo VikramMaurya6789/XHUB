@@ -25,6 +25,8 @@ export default function Header() {
     { label: 'New', href: '/new' },
     { label: 'Watch Later', href: '/watch-later' },
     { label: 'Watch History', href: '/history' },
+    { label: 'Playlists', href: '/playlists' },
+    { label: 'Liked', href: '/liked' },
     { label: 'Categories', href: '/categories' },
     { label: 'Pornstars', href: '/pornstars' },
     { label: 'Celebrities', href: '/celebrities' },

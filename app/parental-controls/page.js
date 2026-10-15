@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
+import ParentalControlsClient from '@/components/ParentalControlsClient';
 import { ShieldCheckIcon } from '@/components/Icons';
 
 export const metadata = {
@@ -23,6 +24,8 @@ export default function ParentalControlsPage() {
             XHUB strictly adheres to industry standards to prevent minors from accessing adult content. We provide metadata labels and encourage the use of parental filtering tools.
           </p>
         </div>
+
+        <ParentalControlsClient />
 
         <div style={{
           background: 'var(--surface)',

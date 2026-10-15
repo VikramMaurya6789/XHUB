@@ -6,7 +6,36 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
 import VideoCard from '@/components/VideoCard';
-import { SlidersIcon, SearchIcon } from '@/components/Icons';
+import { SlidersIcon, SearchIcon, FlameIcon } from '@/components/Icons';
+import { getTrendingSearches } from '@/lib/discovery';
+
+/* Empty-state: trending searches = top 8 tracked terms + 4 hardcoded defaults */
+function TrendingSearches() {
+  const [terms, setTerms] = useState([]);
+  useEffect(() => {
+    setTerms(getTrendingSearches());
+  }, []);
+
+  return (
+    <div className="trending-searches-block">
+      <h2 className="trending-searches-title">
+        <FlameIcon size={18} className="section-heading-icon" />
+        <span>Trending searches</span>
+      </h2>
+      <div className="trending-searches-chips">
+        {terms.map(term => (
+          <Link
+            key={term}
+            href={`/search?q=${encodeURIComponent(term)}`}
+            className="category-chip"
+          >
+            {term}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function SearchInner() {
   const searchParams = useSearchParams();
@@ -166,8 +195,10 @@ function SearchInner() {
         </div>
       </div>
 
-      {/* Video Grid */}
-      {loading ? (
+      {/* Video Grid / empty states */}
+      {!query ? (
+        <TrendingSearches />
+      ) : loading ? (
         <div className="dense-video-grid">
           {Array.from({ length: 15 }).map((_, i) => (
             <div key={i} className="video-card-item">

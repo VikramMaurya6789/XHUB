@@ -6,6 +6,8 @@ import AgeGate from '@/components/AgeGate';
 import VideoCard from '@/components/VideoCard';
 import { BadgeCheckIcon } from '@/components/Icons';
 import { getInitialAvatar } from '@/lib/avatar';
+import { getUid } from '@/lib/uid';
+import { syncFollow } from '@/lib/local';
 
 export default function CreatorProfilePage({ params }) {
   const resolvedParams = use(params);
@@ -36,14 +38,19 @@ export default function CreatorProfilePage({ params }) {
     try {
       const subs = JSON.parse(localStorage.getItem('xhub_subscriptions') || '[]');
       let updated;
+      let action;
       if (isSubscribed) {
         updated = subs.filter(s => s !== creatorName);
         setIsSubscribed(false);
+        action = 'unfollow';
       } else {
         updated = [...subs, creatorName];
         setIsSubscribed(true);
+        action = 'follow';
       }
       localStorage.setItem('xhub_subscriptions', JSON.stringify(updated));
+      // Best-effort server sync — localStorage stays the source of truth.
+      syncFollow(getUid(), creatorName, creatorName, action);
     } catch {}
   };
 

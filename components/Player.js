@@ -20,6 +20,7 @@ export default function Player({
   onTheaterToggle,
   isTheater = false,
   onStreamError,
+  onEnded = null,
 }) {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -415,6 +416,7 @@ export default function Player({
             onPause={() => setIsPlaying(false)}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={e => setDuration(e.target.duration)}
+            onEnded={onEnded}
           />
 
           {!isPlaying && !isLoading && (

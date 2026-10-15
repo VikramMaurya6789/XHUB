@@ -2,15 +2,17 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AgeGate from '@/components/AgeGate';
-import VideoCard from '@/components/VideoCard';
-import TrendingFeedClient from '@/components/TrendingFeedClient';
+import SectionFeedClient from '@/components/SectionFeedClient';
+import SectionGrid from '@/components/SectionGrid';
+import BecauseYouWatched from '@/components/BecauseYouWatched';
 import {
   FlameIcon,
   SparklesIcon,
   StarIcon,
   UserIcon,
   ChevronRightIcon,
-  FilmIcon
+  FilmIcon,
+  GlobeIcon
 } from '@/components/Icons';
 import { POPULAR_CATEGORIES, SPOTLIGHT_CREATORS, getFeed } from '@/lib/videos';
 
@@ -27,7 +29,19 @@ export default async function HomePage() {
   const featuredVideos = (Array.isArray(hotData) ? hotData : hotData?.videos || []).slice(0, 5);
   const trendingVideos = Array.isArray(trendData) ? trendData : trendData?.videos || [];
   const newVideos = (Array.isArray(newData) ? newData : newData?.videos || []).slice(0, 10);
-  const indianVideos = (Array.isArray(indianData) ? indianData : indianData?.videos || []).slice(0, 5);
+  const indianFeed = (Array.isArray(indianData) ? indianData : indianData?.videos || []);
+  const indianVideos = indianFeed.slice(0, 5);
+
+  // "Trending in India": curated geo section — deterministic top-viewed slice
+  // of the Indian feed (all-time most watched), distinct from the newest-first
+  // "Indian Videos" strip above.
+  const numViews = v => {
+    const n = v?.views;
+    return typeof n === 'number' ? n : parseInt(String(n || '0').replace(/[^0-9]/g, ''), 10) || 0;
+  };
+  const trendingIndiaVideos = [...indianFeed]
+    .sort((a, b) => numViews(b) - numViews(a))
+    .slice(0, 12);
 
   return (
     <>
@@ -35,25 +49,15 @@ export default async function HomePage() {
       <Header />
 
       <main className="page-wrapper">
-        {/* Section 1: Featured / Hot strip (§5.3) */}
-        <section className="homepage-section">
-          <div className="section-header-row">
-            <h2 className="section-heading">
-              <FlameIcon className="section-heading-icon" size={20} />
-              <span>Featured & Hot Videos</span>
-            </h2>
-            <Link href="/best" className="section-view-all">
-              <span>View all hot</span>
-              <ChevronRightIcon size={16} />
-            </Link>
-          </div>
-
-          <div className="dense-video-grid">
-            {featuredVideos.map(video => (
-              <VideoCard key={video.vkey || video.id} video={video} priority={true} />
-            ))}
-          </div>
-        </section>
+        {/* Section 1: Featured / Hot strip (§5.3) — shuffleable */}
+        <SectionGrid
+          title="Featured & Hot Videos"
+          icon={<FlameIcon className="section-heading-icon" size={20} />}
+          viewAllHref="/best"
+          viewAllLabel="View all hot"
+          videos={featuredVideos}
+          priority={true}
+        />
 
         {/* Section 2: Category chips quick-jump row (§5.3) */}
         <section className="homepage-section" style={{ marginTop: '2rem' }}>
@@ -134,35 +138,35 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <TrendingFeedClient initialVideos={trendingVideos} />
+          <SectionFeedClient initialVideos={trendingVideos} section="trending" showShuffle={true} />
         </section>
 
-        {/* Section 5: "New" feed grid (§5.3) */}
+        {/* Section 5: "New" feed grid (§5.3) — shuffleable */}
+        <SectionGrid
+          title="Latest New Releases"
+          icon={<SparklesIcon className="section-heading-icon" size={19} />}
+          viewAllHref="/new"
+          viewAllLabel="All new releases"
+          videos={newVideos}
+          style={{ marginTop: '2.5rem' }}
+        />
+
+        {/* Section 6: Indian videos strip — shuffleable */}
+        <SectionGrid
+          title="Indian Videos"
+          icon={<FlameIcon className="section-heading-icon" size={19} />}
+          viewAllHref="/indian"
+          viewAllLabel="All Indian videos"
+          videos={indianVideos}
+          style={{ marginTop: '2.5rem' }}
+        />
+
+        {/* Section 7: Trending in India — curated geo section (all-time most watched Indian videos) */}
         <section className="homepage-section" style={{ marginTop: '2.5rem' }}>
           <div className="section-header-row">
             <h2 className="section-heading">
-              <SparklesIcon className="section-heading-icon" size={19} />
-              <span>Latest New Releases</span>
-            </h2>
-            <Link href="/new" className="section-view-all">
-              <span>All new releases</span>
-              <ChevronRightIcon size={16} />
-            </Link>
-          </div>
-
-          <div className="dense-video-grid">
-            {newVideos.map(video => (
-              <VideoCard key={video.vkey || video.id} video={video} />
-            ))}
-          </div>
-        </section>
-
-        {/* Section 6: Indian videos strip */}
-        <section className="homepage-section" style={{ marginTop: '2.5rem' }}>
-          <div className="section-header-row">
-            <h2 className="section-heading">
-              <FlameIcon className="section-heading-icon" size={19} />
-              <span>Indian Videos</span>
+              <GlobeIcon className="section-heading-icon" size={19} />
+              <span>Trending in India</span>
             </h2>
             <Link href="/indian" className="section-view-all">
               <span>All Indian videos</span>
@@ -170,12 +174,11 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="dense-video-grid">
-            {indianVideos.map(video => (
-              <VideoCard key={video.vkey || video.id} video={video} />
-            ))}
-          </div>
+          <SectionFeedClient initialVideos={trendingIndiaVideos} section="indian" />
         </section>
+
+        {/* Section 8: Because you watched — recommendations from watch history (hidden when empty) */}
+        <BecauseYouWatched />
       </main>
 
       <Footer />
