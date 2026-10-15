@@ -171,9 +171,56 @@ async function feedIds() {
 
 function gitPull() {
   try {
-    execSync('git fetch -q origin && git reset -q --hard origin/main', { cwd: ROOT, timeout: 60000 });
-    return true;
-  } catch (e) { log('git pull failed:', e.message); return false; }
+    execSync('git fetch -q origin', { cwd: ROOT, timeout: 60000 });
+  } catch (e) { log('git fetch failed:', e.message); return false; }
+  // Snapshot unpushed local work BEFORE the reset below. Without this, a
+  // failed push followed by a successful fetch wipes the whole pass's
+  // resolutions (and the shard agents' output) via reset --hard.
+  const snap = {};
+  const snapFiles = ['public/streams.json', 'public/thumbs.json', 'public/hd1080.json', ...shardFiles()];
+  for (const f of snapFiles) {
+    try { snap[f] = JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')); } catch {}
+  }
+  try {
+    execSync('git reset -q --hard origin/main', { cwd: ROOT, timeout: 60000 });
+  } catch (e) { log('git reset failed:', e.message); return false; }
+  // Re-apply snapshotted work over the fresh remote state: per-entry newest
+  // ts wins for streams/thumbs/shards; hd1080 is unioned (never shrinks).
+  try {
+    const freshStreams = load(STREAMS_FILE);
+    const freshThumbs = load(THUMBS_FILE);
+    const freshHd = load(HD1080_FILE);
+    if (snap['public/streams.json']) {
+      for (const [id, e] of Object.entries(snap['public/streams.json'])) {
+        const cur = freshStreams[id];
+        if (e?.qualities?.length && (!cur?.qualities?.length || (e.ts || 0) >= (cur.ts || 0)))
+          freshStreams[id] = e;
+      }
+      fs.writeFileSync(STREAMS_FILE, JSON.stringify(freshStreams));
+    }
+    if (snap['public/thumbs.json']) {
+      for (const [id, e] of Object.entries(snap['public/thumbs.json'])) {
+        const cur = freshThumbs[id];
+        if (e?.url && (!cur?.url || (e.ts || 0) >= (cur.ts || 0))) freshThumbs[id] = e;
+      }
+      fs.writeFileSync(THUMBS_FILE, JSON.stringify(freshThumbs));
+    }
+    if (snap['public/hd1080.json']) {
+      for (const [id, v] of Object.entries(snap['public/hd1080.json'])) freshHd[id] = v;
+      fs.writeFileSync(HD1080_FILE, JSON.stringify(freshHd));
+    }
+    for (const f of snapFiles) {
+      if (f.startsWith('public/streams-shard-') && snap[f]) {
+        const cur = load(path.join(ROOT, f));
+        for (const [id, e] of Object.entries(snap[f])) {
+          if (e?.qualities?.length && (!cur[id]?.qualities?.length || (e.ts || 0) >= (cur[id].ts || 0)))
+            cur[id] = e;
+        }
+        fs.writeFileSync(path.join(ROOT, f), JSON.stringify(cur));
+      }
+    }
+  } catch (e) { log('snapshot restore failed:', e.message); }
+  return true;
 }
 function writeFiles(streams, thumbs, hd1080) {
   fs.writeFileSync(STREAMS_FILE, JSON.stringify(streams));
