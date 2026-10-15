@@ -5,6 +5,7 @@ import { BadgeCheckIcon, StarIcon, ClockIcon, PlayIcon, CheckIcon, HeartIcon, Li
 import PlaylistModal from './PlaylistModal';
 import { isLiked, toggleLiked } from '@/lib/library';
 import { hideVkey, isVkeyHidden } from '@/lib/discovery';
+import { isVerifiedUploader } from '@/lib/verified';
 import { PARENTAL_EVENT, getBlockedSlugs, videoInBlockedCategory } from '@/lib/parental';
 
 export default function VideoCard({ video, priority = false }) {
@@ -300,7 +301,7 @@ export default function VideoCard({ video, priority = false }) {
             <span className="card-uploader-name">
               {video.uploader?.name || 'Unknown uploader'}
             </span>
-            {video.uploader?.verified && (
+            {(video.uploader?.verified || isVerifiedUploader(video.uploader?.name)) && (
               <BadgeCheckIcon size={13} className="verified-badge-icon" />
             )}
             {video.views && (
