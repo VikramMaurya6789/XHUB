@@ -5894,3 +5894,42 @@ error: cannot lock ref 'refs/remotes/origin/main': is at 591bed49c925fa8a02ef43e
 [2026-10-16T09:31:28.507Z] progress 800/846
 [2026-10-16T09:32:30.530Z] progress 500/800
 [2026-10-16T09:32:35.545Z] progress 900/1400
+[2026-10-16T09:35:19.400Z] git pull failed: Command failed: git fetch -q origin && git reset -q --hard origin/main
+fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 stream 1 was not closed cleanly: CANCEL (err 8)
+
+[2026-10-16T09:35:20.814Z] worker shard 0/2 batch: 1236 videos (4731 pending, 18966 stale available)
+[2026-10-16T09:36:44.753Z] progress 1200/1400
+[2026-10-16T09:36:47.278Z] progress 800/800
+[2026-10-16T09:36:47.378Z] progress 800/800
+[2026-10-16T09:36:47.452Z] progress 800/800
+[2026-10-16T09:36:47.458Z] progress 800/800
+[2026-10-16T09:36:47.461Z] progress 800/800
+[2026-10-16T09:36:47.587Z] progress 800/800
+[2026-10-16T09:36:53.261Z] progress 800/800
+[2026-10-16T09:36:53.696Z] progress 800/800
+[2026-10-16T09:36:53.716Z] progress 100/1236
+[2026-10-16T09:36:54.319Z] progress 800/800
+[2026-10-16T09:36:54.502Z] progress 800/800
+[2026-10-16T09:36:54.511Z] progress 800/800
+[2026-10-16T09:36:54.513Z] progress 800/800
+[2026-10-16T09:36:55.537Z] progress 800/800
+[2026-10-16T09:36:59.502Z] progress 800/800
+[2026-10-16T09:37:00.924Z] progress 800/800
+[2026-10-16T09:37:01.016Z] progress 800/800
+[2026-10-16T09:37:01.304Z] progress 800/800
+[2026-10-16T09:37:03.292Z] progress 800/800
+[2026-10-16T09:37:04.164Z] progress 800/800
+[2026-10-16T09:37:05.835Z] progress 800/800
+[2026-10-16T09:37:05.881Z] progress 800/800
+[2026-10-16T09:37:06.225Z] progress 800/800
+[2026-10-16T09:37:08.150Z] progress 800/800
+[2026-10-16T09:37:08.796Z] progress 800/800
+[2026-10-16T09:37:08.939Z] progress 800/800
+[2026-10-16T09:37:10.361Z] progress 800/800
+[2026-10-16T09:37:12.926Z] progress 800/800
+[2026-10-16T09:37:14.760Z] progress 800/800
+[2026-10-16T09:37:16.583Z] progress 800/800
+[2026-10-16T09:37:16.683Z] progress 800/800
+[2026-10-16T09:37:16.781Z] progress 800/800
+[2026-10-16T09:37:23.529Z] progress 800/800
+[2026-10-16T09:37:23.816Z] merged 485 worker part entries
