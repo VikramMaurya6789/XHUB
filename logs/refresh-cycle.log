@@ -8622,5 +8622,54 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-16T21:12:58.424Z] merged 470 worker part entries
 [2026-10-16T21:15:52.078Z] worker shard 0/2 batch: 37 videos (161 pending, 21822 stale available)
 [2026-10-16T21:16:15.018Z] progress 300/1243
-[2026-10-16T21:19:39.968Z] worker shard 0/2 batch: 37 videos (161 pending, 21822 stale available)
-[2026-10-16T21:20:15.015Z] progress 1200/1243
+[2026-10-16T21:20:31.182Z] worker shard 1/2 batch: 1400 videos (161 pending, 21822 stale available)
+[2026-10-16T21:20:37.266Z] merged 21 worker part entries
+[2026-10-16T21:20:53.583Z] push ok: https://github.com/VikramMaurya6789/XHUB/commit/14b423f4d45c5c2b6dc46f6579b7820cc60264d3
+[2026-10-16T21:20:53.632Z] done in 83s: 23 streams (shard 0/2)
+[2026-10-16T21:20:56.170Z] progress 100/1400
+[2026-10-16T21:21:17.277Z] progress 200/1400
+[2026-10-16T21:21:43.413Z] progress 300/1400
+[2026-10-16T21:21:55.252Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 548 streams, 940 thumbs (25561 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-16T21:21:55.252Z] done in 425s: 548 streams, 940 thumbs
+[2026-10-16T21:22:07.143Z] progress 400/1400
+[2026-10-16T21:22:33.545Z] progress 500/1400
+[2026-10-16T21:22:57.127Z] progress 600/1400
+[2026-10-16T21:23:21.082Z] progress 700/1400
+[2026-10-16T21:23:44.765Z] progress 800/1400
+[2026-10-16T21:24:09.157Z] progress 900/1400
+[2026-10-16T21:24:32.228Z] progress 1000/1400
+[2026-10-16T21:24:54.952Z] progress 1100/1400
+[2026-10-16T21:25:17.841Z] progress 1200/1400
+[2026-10-16T21:25:43.169Z] progress 1300/1400
+[2026-10-16T21:26:10.723Z] progress 1400/1400
+[2026-10-16T21:26:10.731Z] progress 1400/1400
+[2026-10-16T21:26:10.776Z] progress 1400/1400
+[2026-10-16T21:26:10.940Z] progress 1400/1400
+[2026-10-16T21:26:11.044Z] progress 1400/1400
+[2026-10-16T21:26:11.315Z] progress 1400/1400
+[2026-10-16T21:26:11.805Z] progress 1400/1400
+[2026-10-16T21:26:11.910Z] progress 1400/1400
+[2026-10-16T21:26:12.145Z] progress 1400/1400
+[2026-10-16T21:26:12.255Z] progress 1400/1400
+[2026-10-16T21:26:12.879Z] progress 1400/1400
+[2026-10-16T21:26:13.177Z] progress 1400/1400
+[2026-10-16T21:26:13.390Z] progress 1400/1400
+[2026-10-16T21:26:13.460Z] progress 1400/1400
+[2026-10-16T21:26:13.736Z] progress 1400/1400
+[2026-10-16T21:26:14.005Z] progress 1400/1400
+[2026-10-16T21:26:14.198Z] progress 1400/1400
+[2026-10-16T21:26:14.290Z] progress 1400/1400
+[2026-10-16T21:26:14.642Z] progress 1400/1400
+[2026-10-16T21:26:14.812Z] progress 1400/1400
+[2026-10-16T21:26:14.878Z] progress 1400/1400
+[2026-10-16T21:26:14.940Z] progress 1400/1400
+[2026-10-16T21:26:15.029Z] progress 1400/1400
+[2026-10-16T21:26:15.146Z] progress 1400/1400
+[2026-10-16T21:26:15.759Z] progress 1400/1400
+[2026-10-16T21:26:15.858Z] progress 1400/1400
+[2026-10-16T21:26:15.965Z] progress 1400/1400
+[2026-10-16T21:26:16.185Z] progress 1400/1400
+[2026-10-16T21:26:16.307Z] progress 1400/1400
+[2026-10-16T21:26:16.525Z] progress 1400/1400
+[2026-10-16T21:26:16.783Z] progress 1400/1400
+[2026-10-16T21:26:17.361Z] progress 1400/1400
