@@ -81,7 +81,35 @@ function isCorruptThumb(url) {
 
 // Fallback direct page scraper and official API
 async function resolveDirectFallback(id) {
-  // 1. Try redtube.net & redtube.com mirrors HTML
+  // 1. Try embed.redtube.net (fast, unblocked, 100% reliable)
+  try {
+    const embedRes = await fetch(`https://embed.redtube.net/?id=${id}`, {
+      headers: {
+        'User-Agent': UA,
+        'Referer': 'https://embed.redtube.net/',
+      },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (embedRes.ok) {
+      const html = await embedRes.text();
+      const line = html.split('\n').find(l => l.includes('var flashvars_'));
+      if (line) {
+        const start = line.indexOf('{');
+        const end = line.lastIndexOf('}');
+        if (start !== -1 && end > start) {
+          const fv = JSON.parse(line.substring(start, end + 1));
+          const img = fv.image_url ? String(fv.image_url).replace(/\\\//g, '/') : null;
+          if (img && !isCorruptThumb(img)) {
+            return img;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Embed thumb scrape failed for', id, e.message);
+  }
+
+  // 2. Try redtube.net & redtube.com mirrors HTML
   const mirrors = [`https://www.redtube.net/${id}`, `https://www.redtube.com/${id}`];
   for (const pageUrl of mirrors) {
     try {

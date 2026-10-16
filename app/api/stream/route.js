@@ -20,6 +20,59 @@ const UA =
 const memoryStreamCache = new Map();
 
 async function scrapeDynamicStreams(id) {
+  // 1. Try embed.redtube.net (fast, unblocked, direct flashvars)
+  try {
+    const embedUrl = `https://embed.redtube.net/?id=${id}`;
+    const embedRes = await fetch(embedUrl, {
+      headers: {
+        'User-Agent': UA,
+        'Referer': 'https://embed.redtube.net/',
+      },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (embedRes.ok) {
+      const html = await embedRes.text();
+      const line = html.split('\n').find(l => l.includes('var flashvars_'));
+      if (line) {
+        const start = line.indexOf('{');
+        const end = line.lastIndexOf('}');
+        if (start !== -1 && end > start) {
+          const fv = JSON.parse(line.substring(start, end + 1));
+          const mp4Def = fv.mediaDefinitions?.find(d => d.format === 'mp4' && d.videoUrl);
+          if (mp4Def) {
+            const streamRes = await fetch(`https://embed.redtube.net${mp4Def.videoUrl}`, {
+              headers: {
+                'User-Agent': UA,
+                'Referer': embedUrl,
+                'Accept': 'application/json',
+              },
+              signal: AbortSignal.timeout(4000),
+            });
+            if (streamRes.ok) {
+              const list = await streamRes.json();
+              if (Array.isArray(list) && list.length) {
+                const qualities = list
+                  .filter(q => q.videoUrl && q.quality)
+                  .map(q => ({
+                    quality: String(q.quality),
+                    url: String(q.videoUrl).replace(/\\/g, ''),
+                  }))
+                  .sort((a, b) => (parseInt(b.quality) || 0) - (parseInt(a.quality) || 0));
+                if (qualities.length) {
+                  const resObj = { qualities, ts: Date.now() };
+                  memoryStreamCache.set(id, resObj);
+                  return resObj;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Embed stream scrape failed for', id, e.message);
+  }
+
   const mirrors = ['https://www.redtube.net', 'https://www.redtube.com'];
   for (const mirror of mirrors) {
     try {
