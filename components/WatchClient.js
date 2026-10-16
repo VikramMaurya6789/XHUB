@@ -451,6 +451,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
             streamsRetrying={streamsRetrying}
             poster={video.thumb}
             title={video.title}
+            embedUrl={video.embed_url || `https://embed.redtube.net/?id=${vkey}&autoplay=1`}
             isTheater={isTheater}
             onTheaterToggle={() => setIsTheater(!isTheater)}
             onEnded={handlePlaylistEnded}

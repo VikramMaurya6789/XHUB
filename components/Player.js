@@ -55,9 +55,11 @@ export default function Player({
   nextUrl = null,         // autoplay-next target
   autoplayNext = false,   // toggle state (owned by WatchClient)
   onAutoplayNextChange,   // toggle sync callback
+  embedUrl = null,
 }) {
   const router = useRouter();
   const mini = useMiniPlayer();
+  const [useEmbed, setUseEmbed] = useState(false);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const containerRef = useRef(null);
@@ -824,16 +826,85 @@ export default function Player({
       onMouseMove={triggerControls}
       onTouchStart={triggerControls}
     >
-      {streamError || (!activeStreamUrl && streamFailedRef.current && !streamsRetrying) ? (
-        <div className="player-error-state">
-          <div className="player-error-icon">⚠</div>
-          <div className="player-error-title">Stream unavailable</div>
-          <div className="player-error-text">This video could not be loaded right now. Please try again later.</div>
+      {useEmbed ? (
+        <div className="player-embed-wrapper" style={{ position: 'relative', width: '100%', height: '100%', minHeight: '360px', backgroundColor: '#000' }}>
+          <iframe
+            src={embedUrl || `https://embed.redtube.net/?id=${encodeURIComponent(vkey)}&autoplay=1`}
+            title={title || 'XHUB Player'}
+            style={{ width: '100%', height: '100%', minHeight: '360px', border: 'none', display: 'block' }}
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
+          {activeStreamUrl && (
+            <button
+              type="button"
+              onClick={() => { setUseEmbed(false); setStreamError(false); }}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                background: 'rgba(0,0,0,0.8)',
+                color: '#ff6b00',
+                border: '1px solid rgba(255,107,0,0.6)',
+                padding: '4px 10px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                zIndex: 20,
+              }}
+            >
+              Switch to HD Player
+            </button>
+          )}
+        </div>
+      ) : streamError || (!activeStreamUrl && streamFailedRef.current && !streamsRetrying) ? (
+        <div className="player-error-state" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+          <div className="player-error-icon" style={{ fontSize: '2.5rem', marginBottom: '0.5rem', color: '#ff6b00' }}>⚠</div>
+          <div className="player-error-title" style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Direct HD stream unavailable</div>
+          <div className="player-error-text" style={{ color: '#aaa', fontSize: '0.9rem', marginBottom: '1.25rem', maxWidth: '360px' }}>
+            The direct stream server is updating. Switch to the standard player to watch now without waiting.
+          </div>
+          <button
+            type="button"
+            onClick={() => setUseEmbed(true)}
+            className="filter-pill-btn active"
+            style={{
+              background: '#ff6b00',
+              color: '#fff',
+              border: 'none',
+              padding: '10px 24px',
+              borderRadius: '24px',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(255,107,0,0.3)',
+            }}
+          >
+            ▶ Watch with Standard Player
+          </button>
         </div>
       ) : !activeStreamUrl ? (
-        <div className="player-loading-state">
+        <div className="player-loading-state" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
           <div className="player-quality-spinner" style={{ width: 32, height: 32 }} />
-          {streamsRetrying && <div className="player-error-text">Resolving HD stream…</div>}
+          <div className="player-error-text" style={{ marginTop: '0.75rem' }}>Resolving HD stream…</div>
+          <button
+            type="button"
+            onClick={() => setUseEmbed(true)}
+            style={{
+              marginTop: '1rem',
+              background: 'transparent',
+              color: '#ff6b00',
+              border: '1px solid rgba(255,107,0,0.5)',
+              padding: '5px 14px',
+              borderRadius: '16px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Play immediately (Standard)
+          </button>
         </div>
       ) : (
         <>

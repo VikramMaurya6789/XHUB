@@ -179,7 +179,8 @@ async function main() {
 
   const catalogOrder = [];
   for (const [id, v] of Object.entries(catalog)) {
-    if (v?.date) catalogOrder.push([id, v.date]);
+    const d = v?.added || v?.date || v?.publishDate || '';
+    if (d) catalogOrder.push([id, d]);
   }
   catalogOrder.sort((a, b) => (b[1] < a[1] ? -1 : b[1] > a[1] ? 1 : 0));
   const inStreams = new Set(Object.keys(streams));
