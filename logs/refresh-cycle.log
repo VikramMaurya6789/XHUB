@@ -9088,3 +9088,12 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-16T23:29:58.575Z] progress 500/629
 [2026-10-16T23:30:48.640Z] merged 1014 worker part entries
 [2026-10-16T23:30:50.347Z] progress 700/1400
+[2026-10-16T23:37:03.422Z] worker shard 0/2 batch: 462 videos (161 pending, 22298 stale available)
+[2026-10-16T23:37:23.154Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-1: 701 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-1.json
+[2026-10-16T23:37:23.157Z] done in 973s: 701 streams (shard 1/2)
+[2026-10-16T23:37:45.527Z] progress 100/462
+[2026-10-16T23:38:03.936Z] progress 700/866
+[2026-10-16T23:38:35.628Z] progress 200/462
+[2026-10-16T23:39:18.399Z] progress 800/866
+[2026-10-16T23:39:26.541Z] progress 300/462
+[2026-10-16T23:40:17.551Z] progress 400/462
