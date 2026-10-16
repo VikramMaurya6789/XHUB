@@ -56,6 +56,13 @@ const PART_FILE = WORKER_MODE ? path.join(ROOT, `public/refresh-part-${SHARD}.js
 const shardOf = id => { const n = parseInt(id, 10); return Number.isFinite(n) ? ((n % SHARDS) + SHARDS) % SHARDS : 0 };
 const STREAM_REFRESH_MIN = 60;
 const THUMB_REFRESH_H = 72;
+// Thumb fast-lane (writer only): Redtube thumbnail CDN tokens expire ~1h
+// after issuance (verified 2026-10-16: validto = now + 3600s), so the
+// feed-visible surface (newest catalog videos) gets its thumbs re-scraped
+// every writer run. Without this, thumbs.json is permanently stale vs the
+// 72h general cycle and /api/thumb + apps show placeholders/black tiles.
+const THUMB_FASTLANE_N = 600;
+const THUMB_FASTLANE_MIN = 45;
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function log(...a) {
@@ -192,27 +199,46 @@ async function main() {
   const batch = [...pending, ...stale]
     .filter(id => !WORKER_MODE || shardOf(id) === SHARD)
     .slice(0, BATCH);
-  log(`${WORKER_MODE ? `worker shard ${SHARD}/${SHARDS} ` : ''}batch: ${batch.length} videos (${pending.length} pending, ${stale.length} stale available)`);
+  // Thumb fast-lane: newest catalog videos first (writer only). Workers never
+  // touch thumbs.json, so the lane is writer-exclusive by construction.
+  const laneSet = new Set();
+  let lane = [];
+  if (!WORKER_MODE) {
+    lane = catalogOrder.slice(0, THUMB_FASTLANE_N).map(([id]) => id).filter(id => {
+      const te = thumbs[id];
+      return !te?.url || (now - (te.ts || 0) > THUMB_FASTLANE_MIN * 60 * 1000);
+    });
+    for (const id of lane) laneSet.add(id);
+    if (lane.length) log(`thumb fast-lane: ${lane.length} newest videos`);
+  }
+  const fullBatch = [...lane, ...batch];
+  log(`${WORKER_MODE ? `worker shard ${SHARD}/${SHARDS} ` : ''}batch: ${fullBatch.length} videos (${pending.length} pending, ${stale.length} stale available)`);
 
   let done = 0, okS = 0, okT = 0;
   let qi = 0;
   const refreshed = new Set();
   await Promise.all(Array.from({ length: CONC }, async () => {
-    while (qi < batch.length) {
-      const id = batch[qi++];
+    while (qi < fullBatch.length) {
+      const id = fullBatch[qi++];
       done++;
       try {
         const se = streams[id];
         const te = thumbs[id];
         const needS = !se?.qualities?.length || (now - (se.ts || 0) > STREAM_REFRESH_MIN * 60 * 1000);
         const needT = !WORKER_MODE && (!te?.url || (now - (te.ts || 0) > THUMB_REFRESH_H * 3600 * 1000));
-        if (needS || needT) {
+        if (laneSet.has(id) && !needS) {
+          // Fast-lane: og:image scrape only (no stream re-resolve) — keeps the
+          // run fast enough for the 10-min cron cadence.
+          const html = await fetchPage(id);
+          const thumb = html ? extractOgImage(html) : null;
+          if (thumb) { thumbs[id] = { url: thumb, ts: Date.now() }; okT++; }
+        } else if (needS || needT) {
           const { thumb, qualities } = await resolveBoth(id);
           if (qualities?.length) { streams[id] = { qualities, ts: Date.now() }; okS++; refreshed.add(id); }
           if (thumb && !WORKER_MODE) { thumbs[id] = { url: thumb, ts: Date.now() }; okT++; }
         }
       } catch {}
-      if (done % 100 === 0) log(`progress ${done}/${batch.length}`);
+      if (done % 100 === 0) log(`progress ${done}/${fullBatch.length}`);
     }
   }));
 
