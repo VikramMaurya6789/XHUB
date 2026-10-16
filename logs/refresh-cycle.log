@@ -5667,3 +5667,40 @@ error: cannot lock ref 'refs/remotes/origin/main': is at 591bed49c925fa8a02ef43e
 [2026-10-16T08:10:22.140Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-1: 756 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-1.json
 [2026-10-16T08:10:22.140Z] done in 1328s: 756 streams (shard 1/2)
 [2026-10-16T08:11:00.942Z] progress 100/800
+[2026-10-16T08:14:14.505Z] worker shard 1/2 batch: 1400 videos (6837 pending, 16206 stale available)
+[2026-10-16T08:14:14.416Z] worker shard 0/2 batch: 1028 videos (6837 pending, 16206 stale available)
+[2026-10-16T08:14:50.838Z] progress 800/800
+[2026-10-16T08:14:50.841Z] progress 800/800
+[2026-10-16T08:14:54.608Z] progress 800/800
+[2026-10-16T08:14:55.807Z] progress 800/800
+[2026-10-16T08:14:56.159Z] progress 800/800
+[2026-10-16T08:14:56.625Z] progress 800/800
+[2026-10-16T08:14:56.644Z] progress 800/800
+[2026-10-16T08:14:56.824Z] progress 800/800
+[2026-10-16T08:14:56.977Z] progress 800/800
+[2026-10-16T08:14:58.066Z] progress 800/800
+[2026-10-16T08:14:58.577Z] progress 800/800
+[2026-10-16T08:14:58.798Z] progress 800/800
+[2026-10-16T08:14:59.844Z] progress 800/800
+[2026-10-16T08:15:00.081Z] progress 800/800
+[2026-10-16T08:15:00.466Z] progress 800/800
+[2026-10-16T08:15:00.617Z] progress 800/800
+[2026-10-16T08:15:02.319Z] progress 800/800
+[2026-10-16T08:15:02.386Z] progress 800/800
+[2026-10-16T08:15:04.007Z] progress 800/800
+[2026-10-16T08:15:04.526Z] progress 800/800
+[2026-10-16T08:15:09.990Z] progress 800/800
+[2026-10-16T08:15:10.012Z] progress 800/800
+[2026-10-16T08:15:10.121Z] progress 800/800
+[2026-10-16T08:15:11.070Z] progress 800/800
+[2026-10-16T08:15:14.831Z] progress 800/800
+[2026-10-16T08:15:14.848Z] progress 800/800
+[2026-10-16T08:15:15.614Z] progress 800/800
+[2026-10-16T08:15:16.868Z] progress 800/800
+[2026-10-16T08:15:18.007Z] progress 800/800
+[2026-10-16T08:15:22.819Z] progress 800/800
+[2026-10-16T08:15:26.012Z] progress 800/800
+[2026-10-16T08:15:29.042Z] progress 100/1400
+[2026-10-16T08:15:30.373Z] progress 800/800
+[2026-10-16T08:15:30.630Z] merged 504 worker part entries
+[2026-10-16T08:15:49.211Z] progress 100/1028
