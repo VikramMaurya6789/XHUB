@@ -5481,3 +5481,51 @@ error: cannot lock ref 'refs/remotes/origin/main': is at 591bed49c925fa8a02ef43e
 [2026-10-16T06:50:39.048Z] progress 800/800
 [2026-10-16T06:50:41.442Z] progress 800/800
 [2026-10-16T06:50:41.823Z] merged 1663 worker part entries
+[2026-10-16T06:54:25.469Z] worker shard 1/2 batch: 1400 videos (0 pending, 14782 stale available)
+[2026-10-16T06:54:30.164Z] progress 400/800
+[2026-10-16T06:55:20.715Z] progress 500/800
+[2026-10-16T06:55:21.232Z] progress 100/1400
+[2026-10-16T06:56:37.559Z] progress 600/800
+[2026-10-16T06:56:44.258Z] progress 200/1400
+[2026-10-16T06:57:35.215Z] progress 700/800
+[2026-10-16T06:58:03.346Z] progress 300/1400
+[2026-10-16T06:58:27.990Z] progress 800/800
+[2026-10-16T06:58:28.559Z] progress 800/800
+[2026-10-16T06:58:32.332Z] progress 800/800
+[2026-10-16T06:58:32.529Z] progress 800/800
+[2026-10-16T06:58:34.408Z] progress 800/800
+[2026-10-16T06:58:34.419Z] progress 800/800
+[2026-10-16T06:58:35.201Z] progress 800/800
+[2026-10-16T06:58:35.366Z] progress 800/800
+[2026-10-16T06:58:35.716Z] progress 800/800
+[2026-10-16T06:58:36.113Z] progress 800/800
+[2026-10-16T06:58:36.282Z] progress 800/800
+[2026-10-16T06:58:36.419Z] progress 800/800
+[2026-10-16T06:58:36.690Z] progress 800/800
+[2026-10-16T06:58:37.098Z] progress 800/800
+[2026-10-16T06:58:39.185Z] progress 800/800
+[2026-10-16T06:58:39.185Z] progress 800/800
+[2026-10-16T06:58:40.484Z] progress 800/800
+[2026-10-16T06:58:41.062Z] progress 800/800
+[2026-10-16T06:58:41.597Z] progress 800/800
+[2026-10-16T06:58:42.632Z] progress 800/800
+[2026-10-16T06:58:42.742Z] progress 800/800
+[2026-10-16T06:58:42.750Z] progress 800/800
+[2026-10-16T06:58:43.328Z] progress 800/800
+[2026-10-16T06:58:43.601Z] progress 800/800
+[2026-10-16T06:58:44.334Z] progress 800/800
+[2026-10-16T06:58:44.339Z] progress 800/800
+[2026-10-16T06:58:45.446Z] progress 800/800
+[2026-10-16T06:58:45.562Z] progress 800/800
+[2026-10-16T06:58:45.849Z] progress 800/800
+[2026-10-16T06:58:46.776Z] progress 800/800
+[2026-10-16T06:58:47.320Z] progress 800/800
+[2026-10-16T06:58:49.184Z] progress 800/800
+[2026-10-16T06:58:59.528Z] progress 400/1400
+[2026-10-16T06:59:34.398Z] progress 500/1400
+[2026-10-16T06:59:39.979Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 602 streams, 708 thumbs (18302 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-16T06:59:39.980Z] done in 441s: 602 streams, 708 thumbs
+[2026-10-16T07:00:02.404Z] progress 600/1400
+[2026-10-16T07:00:28.722Z] progress 700/1400
+[2026-10-16T07:00:58.137Z] progress 800/1400
+[2026-10-16T07:01:27.672Z] progress 900/1400
