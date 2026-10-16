@@ -7975,3 +7975,44 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-16T17:48:49.728Z] progress 100/338
 [2026-10-16T17:49:11.572Z] progress 200/338
 [2026-10-16T17:49:34.413Z] progress 300/338
+[2026-10-16T18:00:37.577Z] worker shard 0/2 batch: 594 videos (161 pending, 23327 stale available)
+[2026-10-16T18:00:44.531Z] progress 800/800
+[2026-10-16T18:00:45.170Z] progress 800/800
+[2026-10-16T18:00:46.124Z] progress 800/800
+[2026-10-16T18:00:46.259Z] progress 800/800
+[2026-10-16T18:00:46.260Z] progress 800/800
+[2026-10-16T18:00:46.456Z] progress 800/800
+[2026-10-16T18:00:46.954Z] progress 800/800
+[2026-10-16T18:00:47.253Z] progress 800/800
+[2026-10-16T18:00:47.998Z] progress 800/800
+[2026-10-16T18:00:48.615Z] progress 800/800
+[2026-10-16T18:00:49.467Z] progress 800/800
+[2026-10-16T18:00:49.609Z] progress 800/800
+[2026-10-16T18:00:54.261Z] progress 800/800
+[2026-10-16T18:00:59.463Z] progress 800/800
+[2026-10-16T18:01:00.057Z] progress 800/800
+[2026-10-16T18:01:00.778Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-1: 1218 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-1.json
+[2026-10-16T18:01:00.778Z] done in 470s: 1218 streams (shard 1/2)
+[2026-10-16T18:01:01.429Z] progress 800/800
+[2026-10-16T18:01:01.958Z] progress 800/800
+[2026-10-16T18:01:02.008Z] progress 800/800
+[2026-10-16T18:01:02.032Z] progress 800/800
+[2026-10-16T18:01:02.144Z] progress 800/800
+[2026-10-16T18:01:03.159Z] progress 800/800
+[2026-10-16T18:01:03.205Z] progress 800/800
+[2026-10-16T18:01:03.213Z] progress 800/800
+[2026-10-16T18:01:03.388Z] progress 800/800
+[2026-10-16T18:01:03.392Z] progress 800/800
+[2026-10-16T18:01:03.393Z] progress 800/800
+[2026-10-16T18:01:03.790Z] progress 800/800
+[2026-10-16T18:01:03.794Z] progress 800/800
+[2026-10-16T18:01:04.127Z] progress 800/800
+[2026-10-16T18:01:04.128Z] progress 800/800
+[2026-10-16T18:01:04.129Z] progress 800/800
+[2026-10-16T18:01:04.506Z] progress 800/800
+[2026-10-16T18:01:04.742Z] merged 938 worker part entries
+[2026-10-16T18:01:08.568Z] progress 100/594
+[2026-10-16T18:01:29.171Z] progress 200/594
+[2026-10-16T18:01:49.768Z] progress 300/594
+[2026-10-16T18:02:09.215Z] progress 400/594
+[2026-10-16T18:02:29.046Z] progress 500/594
