@@ -1,0 +1,4 @@
+error: patch failed: scripts/refresh-cycle.mjs:3
+error: scripts/refresh-cycle.mjs: patch does not apply
+error: patch failed: app/api/stream/route.js:25
+error: app/api/stream/route.js: patch does not apply
