@@ -7284,3 +7284,53 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-16T14:37:35.092Z] progress 1400/1400
 [2026-10-16T14:37:35.371Z] progress 1400/1400
 [2026-10-16T14:37:35.747Z] progress 1400/1400
+[2026-10-16T14:42:06.031Z] worker shard 0/2 batch: 495 videos (161 pending, 22786 stale available)
+[2026-10-16T14:42:11.023Z] progress 700/800
+[2026-10-16T14:42:49.158Z] progress 300/1400
+[2026-10-16T14:43:07.474Z] progress 800/800
+[2026-10-16T14:43:07.616Z] progress 800/800
+[2026-10-16T14:43:07.859Z] progress 800/800
+[2026-10-16T14:43:07.926Z] progress 800/800
+[2026-10-16T14:43:08.778Z] progress 800/800
+[2026-10-16T14:43:08.779Z] progress 800/800
+[2026-10-16T14:43:10.310Z] progress 800/800
+[2026-10-16T14:43:10.310Z] progress 800/800
+[2026-10-16T14:43:11.673Z] progress 800/800
+[2026-10-16T14:43:14.620Z] progress 800/800
+[2026-10-16T14:43:14.867Z] progress 800/800
+[2026-10-16T14:43:16.235Z] progress 800/800
+[2026-10-16T14:43:16.328Z] progress 800/800
+[2026-10-16T14:43:16.563Z] progress 800/800
+[2026-10-16T14:43:16.962Z] progress 800/800
+[2026-10-16T14:43:16.966Z] progress 800/800
+[2026-10-16T14:43:16.967Z] progress 800/800
+[2026-10-16T14:43:17.963Z] progress 800/800
+[2026-10-16T14:43:18.414Z] progress 800/800
+[2026-10-16T14:43:18.425Z] progress 800/800
+[2026-10-16T14:43:20.005Z] progress 800/800
+[2026-10-16T14:43:20.011Z] progress 800/800
+[2026-10-16T14:43:20.276Z] progress 100/495
+[2026-10-16T14:43:20.498Z] progress 800/800
+[2026-10-16T14:43:20.954Z] progress 800/800
+[2026-10-16T14:43:21.129Z] progress 800/800
+[2026-10-16T14:43:21.696Z] progress 800/800
+[2026-10-16T14:43:21.926Z] progress 800/800
+[2026-10-16T14:43:24.118Z] progress 800/800
+[2026-10-16T14:43:25.130Z] progress 800/800
+[2026-10-16T14:43:25.474Z] progress 800/800
+[2026-10-16T14:43:25.805Z] progress 800/800
+[2026-10-16T14:43:27.512Z] progress 800/800
+[2026-10-16T14:43:27.846Z] merged 1084 worker part entries
+[2026-10-16T14:43:40.636Z] progress 400/1400
+[2026-10-16T14:44:11.806Z] progress 200/495
+[2026-10-16T14:44:15.643Z] progress 500/1400
+[2026-10-16T14:44:53.519Z] progress 600/1400
+[2026-10-16T14:45:07.601Z] progress 300/495
+[2026-10-16T14:45:23.255Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 624 streams, 627 thumbs (25530 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-16T14:45:23.256Z] done in 373s: 624 streams, 627 thumbs
+[2026-10-16T14:45:35.908Z] progress 700/1400
+[2026-10-16T14:45:54.926Z] progress 400/495
+[2026-10-16T14:46:13.279Z] progress 800/1400
+[2026-10-16T14:46:51.825Z] progress 900/1400
+[2026-10-16T14:47:12.089Z] progress 1000/1400
+[2026-10-16T14:47:32.054Z] progress 1100/1400
