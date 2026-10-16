@@ -4938,3 +4938,18 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-16T05:07:07.930Z] progress 800/800
 [2026-10-16T05:07:08.301Z] progress 800/800
 [2026-10-16T05:07:08.693Z] merged 1602 worker part entries
+[2026-10-16T05:10:43.418Z] worker shard 1/2 batch: 1400 videos (0 pending, 15233 stale available)
+[2026-10-16T05:11:27.475Z] progress 100/477
+[2026-10-16T05:12:10.445Z] progress 100/1400
+[2026-10-16T05:12:11.731Z] progress 200/800
+[2026-10-16T05:13:11.510Z] progress 200/477
+[2026-10-16T05:13:44.243Z] progress 200/1400
+[2026-10-16T05:13:52.113Z] progress 300/800
+[2026-10-16T05:14:50.245Z] progress 300/477
+[2026-10-16T05:15:32.898Z] progress 300/1400
+[2026-10-16T05:15:33.394Z] progress 400/800
+[2026-10-16T05:16:43.436Z] progress 400/477
+[2026-10-16T05:17:27.968Z] progress 400/1400
+[2026-10-16T05:17:31.205Z] progress 500/800
+[2026-10-16T05:18:54.526Z] progress 500/1400
+[2026-10-16T05:18:59.894Z] progress 600/800
