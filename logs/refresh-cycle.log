@@ -7429,3 +7429,43 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-16T15:19:39.347Z] progress 700/1400
 [2026-10-16T15:19:55.436Z] progress 600/616
 [2026-10-16T15:20:21.728Z] progress 800/1400
+[2026-10-16T15:25:34.063Z] worker shard 0/2 batch: 1400 videos (161 pending, 23195 stale available)
+[2026-10-16T15:25:46.087Z] progress 600/800
+[2026-10-16T15:26:32.489Z] progress 100/1400
+[2026-10-16T15:26:38.180Z] progress 700/800
+[2026-10-16T15:27:23.736Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-1: 689 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-1.json
+[2026-10-16T15:27:23.740Z] done in 1024s: 689 streams (shard 1/2)
+[2026-10-16T15:27:26.209Z] progress 200/1400
+[2026-10-16T15:27:27.568Z] progress 800/800
+[2026-10-16T15:27:28.067Z] progress 800/800
+[2026-10-16T15:27:28.292Z] progress 800/800
+[2026-10-16T15:27:28.939Z] progress 800/800
+[2026-10-16T15:27:29.934Z] progress 800/800
+[2026-10-16T15:27:29.963Z] progress 800/800
+[2026-10-16T15:27:30.046Z] progress 800/800
+[2026-10-16T15:27:30.211Z] progress 800/800
+[2026-10-16T15:27:31.016Z] progress 800/800
+[2026-10-16T15:27:31.346Z] progress 800/800
+[2026-10-16T15:27:31.892Z] progress 800/800
+[2026-10-16T15:27:31.894Z] progress 800/800
+[2026-10-16T15:27:32.959Z] progress 800/800
+[2026-10-16T15:27:33.064Z] progress 800/800
+[2026-10-16T15:27:34.008Z] progress 800/800
+[2026-10-16T15:27:34.665Z] progress 800/800
+[2026-10-16T15:27:34.711Z] progress 800/800
+[2026-10-16T15:27:35.341Z] progress 800/800
+[2026-10-16T15:27:36.013Z] progress 800/800
+[2026-10-16T15:27:36.931Z] progress 800/800
+[2026-10-16T15:27:38.106Z] progress 800/800
+[2026-10-16T15:27:38.234Z] progress 800/800
+[2026-10-16T15:27:38.277Z] progress 800/800
+[2026-10-16T15:27:38.424Z] progress 800/800
+[2026-10-16T15:27:38.640Z] progress 800/800
+[2026-10-16T15:27:39.263Z] progress 800/800
+[2026-10-16T15:27:39.570Z] progress 800/800
+[2026-10-16T15:27:39.595Z] progress 800/800
+[2026-10-16T15:27:39.895Z] progress 800/800
+[2026-10-16T15:27:41.474Z] progress 800/800
+[2026-10-16T15:27:42.901Z] progress 800/800
+[2026-10-16T15:27:42.934Z] progress 800/800
+[2026-10-16T15:27:43.259Z] merged 369 worker part entries
