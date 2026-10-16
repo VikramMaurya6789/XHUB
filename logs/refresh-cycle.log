@@ -7245,3 +7245,42 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-16T14:31:43.341Z] progress 500/1400
 [2026-10-16T14:32:49.341Z] progress 400/800
 [2026-10-16T14:32:53.995Z] progress 600/1400
+[2026-10-16T14:36:05.382Z] progress 1200/1400
+[2026-10-16T14:36:05.435Z] worker shard 0/2 batch: 495 videos (161 pending, 22620 stale available)
+[2026-10-16T14:36:37.869Z] progress 100/495
+[2026-10-16T14:36:51.071Z] progress 1300/1400
+[2026-10-16T14:37:12.790Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 601 streams, 626 thumbs (25530 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-16T14:37:12.797Z] done in 554s: 601 streams, 626 thumbs
+[2026-10-16T14:37:16.413Z] progress 200/495
+[2026-10-16T14:37:28.016Z] progress 1400/1400
+[2026-10-16T14:37:28.258Z] progress 1400/1400
+[2026-10-16T14:37:28.556Z] progress 1400/1400
+[2026-10-16T14:37:28.608Z] progress 1400/1400
+[2026-10-16T14:37:29.037Z] progress 1400/1400
+[2026-10-16T14:37:29.206Z] progress 1400/1400
+[2026-10-16T14:37:29.420Z] progress 1400/1400
+[2026-10-16T14:37:29.625Z] progress 1400/1400
+[2026-10-16T14:37:29.787Z] progress 1400/1400
+[2026-10-16T14:37:30.274Z] progress 1400/1400
+[2026-10-16T14:37:31.251Z] progress 1400/1400
+[2026-10-16T14:37:31.261Z] progress 1400/1400
+[2026-10-16T14:37:31.849Z] progress 1400/1400
+[2026-10-16T14:37:31.851Z] progress 1400/1400
+[2026-10-16T14:37:32.323Z] progress 1400/1400
+[2026-10-16T14:37:32.508Z] progress 1400/1400
+[2026-10-16T14:37:32.542Z] progress 1400/1400
+[2026-10-16T14:37:32.766Z] progress 1400/1400
+[2026-10-16T14:37:32.774Z] progress 1400/1400
+[2026-10-16T14:37:32.788Z] progress 1400/1400
+[2026-10-16T14:37:32.793Z] progress 1400/1400
+[2026-10-16T14:37:32.801Z] progress 1400/1400
+[2026-10-16T14:37:32.807Z] progress 1400/1400
+[2026-10-16T14:37:32.844Z] progress 1400/1400
+[2026-10-16T14:37:32.998Z] progress 1400/1400
+[2026-10-16T14:37:33.643Z] progress 1400/1400
+[2026-10-16T14:37:34.214Z] progress 1400/1400
+[2026-10-16T14:37:34.891Z] progress 1400/1400
+[2026-10-16T14:37:35.049Z] progress 1400/1400
+[2026-10-16T14:37:35.092Z] progress 1400/1400
+[2026-10-16T14:37:35.371Z] progress 1400/1400
+[2026-10-16T14:37:35.747Z] progress 1400/1400
