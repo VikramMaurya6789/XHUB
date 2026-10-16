@@ -5761,3 +5761,25 @@ error: cannot lock ref 'refs/remotes/origin/main': is at 591bed49c925fa8a02ef43e
 [2026-10-16T08:33:31.153Z] progress 800/800
 [2026-10-16T08:33:33.560Z] progress 800/800
 [2026-10-16T08:33:33.816Z] merged 539 worker part entries
+[2026-10-16T08:36:33.092Z] worker shard 1/2 batch: 1400 videos (5921 pending, 16856 stale available)
+[2026-10-16T08:36:39.103Z] progress 100/800
+[2026-10-16T08:36:58.750Z] progress 400/857
+[2026-10-16T08:37:47.623Z] progress 100/1400
+[2026-10-16T08:38:19.802Z] progress 200/800
+[2026-10-16T08:38:44.108Z] progress 500/857
+[2026-10-16T08:39:23.892Z] progress 200/1400
+[2026-10-16T08:40:01.593Z] progress 300/800
+[2026-10-16T08:40:35.318Z] progress 600/857
+[2026-10-16T08:41:09.150Z] progress 300/1400
+[2026-10-16T08:41:43.454Z] progress 400/800
+[2026-10-16T08:42:19.966Z] progress 700/857
+[2026-10-16T08:42:55.139Z] progress 400/1400
+[2026-10-16T08:43:41.235Z] progress 500/800
+[2026-10-16T08:44:25.002Z] progress 800/857
+[2026-10-16T08:45:07.013Z] progress 500/1400
+[2026-10-16T08:45:51.237Z] progress 600/800
+[2026-10-16T08:46:58.797Z] progress 600/1400
+[2026-10-16T08:47:00.345Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-0: 458 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-0.json
+[2026-10-16T08:47:00.346Z] done in 752s: 458 streams (shard 0/2)
+[2026-10-16T08:47:30.725Z] progress 700/800
+[2026-10-16T08:48:08.797Z] progress 700/1400
