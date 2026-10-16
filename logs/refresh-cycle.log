@@ -5234,3 +5234,50 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-16T06:11:35.939Z] progress 800/800
 [2026-10-16T06:11:36.127Z] merged 2237 worker part entries
 [2026-10-16T06:11:40.922Z] progress 900/1400
+[2026-10-16T06:12:11.899Z] push ok: https://github.com/VikramMaurya6789/XHUB/commit/591bed49c925fa8a02ef43e7356eafa70d1841fb
+[2026-10-16T06:12:11.905Z] done in 1114s: 758 streams (shard 1/2)
+[2026-10-16T06:12:15.802Z] progress 1000/1400
+[2026-10-16T06:12:43.736Z] progress 1100/1400
+[2026-10-16T06:12:45.257Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 430 streams, 693 thumbs (18302 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-16T06:12:45.258Z] done in 957s: 430 streams, 693 thumbs
+[2026-10-16T06:13:04.096Z] git pull failed: Command failed: git fetch -q origin && git reset -q --hard origin/main
+error: cannot lock ref 'refs/remotes/origin/main': is at 591bed49c925fa8a02ef43e7356eafa70d1841fb but expected 4241d2a174c8716b00dc07ba35bdf78d70bac43a
+
+[2026-10-16T06:13:05.556Z] worker shard 1/2 batch: 1400 videos (0 pending, 18302 stale available)
+[2026-10-16T06:13:26.503Z] progress 1200/1400
+[2026-10-16T06:14:04.054Z] progress 100/1400
+[2026-10-16T06:14:38.266Z] progress 1300/1400
+[2026-10-16T06:15:18.046Z] progress 200/1400
+[2026-10-16T06:15:58.456Z] progress 1400/1400
+[2026-10-16T06:15:58.508Z] progress 1400/1400
+[2026-10-16T06:15:58.508Z] progress 1400/1400
+[2026-10-16T06:15:58.631Z] progress 1400/1400
+[2026-10-16T06:15:58.968Z] progress 1400/1400
+[2026-10-16T06:15:58.968Z] progress 1400/1400
+[2026-10-16T06:15:59.031Z] progress 1400/1400
+[2026-10-16T06:16:00.756Z] progress 1400/1400
+[2026-10-16T06:16:00.943Z] progress 1400/1400
+[2026-10-16T06:16:01.023Z] progress 1400/1400
+[2026-10-16T06:16:01.964Z] progress 1400/1400
+[2026-10-16T06:16:03.523Z] progress 1400/1400
+[2026-10-16T06:16:04.133Z] progress 1400/1400
+[2026-10-16T06:16:05.807Z] progress 1400/1400
+[2026-10-16T06:16:06.052Z] progress 1400/1400
+[2026-10-16T06:16:07.210Z] progress 1400/1400
+[2026-10-16T06:16:07.271Z] progress 1400/1400
+[2026-10-16T06:16:07.409Z] progress 1400/1400
+[2026-10-16T06:16:07.415Z] progress 1400/1400
+[2026-10-16T06:16:07.650Z] progress 1400/1400
+[2026-10-16T06:16:08.105Z] progress 1400/1400
+[2026-10-16T06:16:10.881Z] progress 1400/1400
+[2026-10-16T06:16:12.020Z] progress 1400/1400
+[2026-10-16T06:16:12.023Z] progress 1400/1400
+[2026-10-16T06:16:12.127Z] progress 1400/1400
+[2026-10-16T06:16:12.263Z] progress 1400/1400
+[2026-10-16T06:16:12.497Z] progress 1400/1400
+[2026-10-16T06:16:12.973Z] progress 1400/1400
+[2026-10-16T06:16:12.977Z] progress 1400/1400
+[2026-10-16T06:16:12.980Z] progress 1400/1400
+[2026-10-16T06:16:15.415Z] progress 300/1400
+[2026-10-16T06:16:16.269Z] progress 1400/1400
+[2026-10-16T06:16:17.238Z] progress 1400/1400
