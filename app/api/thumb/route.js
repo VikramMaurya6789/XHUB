@@ -168,7 +168,7 @@ async function resolveDirectFallback(id) {
 }
 
 async function fetchImageBytes(url) {
-  return fetch(url, {
+  const res = await fetch(url, {
     headers: {
       'User-Agent': UA,
       'Referer': 'https://www.redtube.com/',
@@ -176,6 +176,11 @@ async function fetchImageBytes(url) {
     },
     signal: AbortSignal.timeout(6000),
   });
+  // 410/472 = expired CDN token — treat as fetch failure so fallback logic runs
+  if (res.status === 410 || res.status === 472) {
+    throw new Error('CDN token expired');
+  }
+  return res;
 }
 
 export async function GET(req) {

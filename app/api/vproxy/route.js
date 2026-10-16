@@ -123,7 +123,8 @@ export async function GET(req) {
 
     // Token expired (CDN signs URLs with ~2h validity).
     // Try re-fetching fresh map, or scrape dynamically.
-    if (upstream.status === 403 || upstream.status === 410) {
+    // 472 = custom expired-token response from RDT CDN.
+    if (upstream.status === 403 || upstream.status === 410 || upstream.status === 472) {
       const freshTarget = await scrapeDynamicStream(id, q);
       if (freshTarget && freshTarget !== target) {
         target = freshTarget;
