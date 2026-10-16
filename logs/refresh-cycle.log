@@ -4800,3 +4800,39 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-16T04:34:47.064Z] progress 1400/1400
 [2026-10-16T04:34:47.065Z] progress 1400/1400
 [2026-10-16T04:34:47.065Z] progress 800/800
+[2026-10-16T04:34:47.150Z] progress 800/800
+[2026-10-16T04:34:47.209Z] progress 800/800
+[2026-10-16T04:34:47.211Z] progress 800/800
+[2026-10-16T04:34:47.213Z] progress 800/800
+[2026-10-16T04:34:47.335Z] progress 800/800
+[2026-10-16T04:34:47.378Z] progress 800/800
+[2026-10-16T04:34:47.500Z] progress 800/800
+[2026-10-16T04:34:47.515Z] progress 800/800
+[2026-10-16T04:34:47.726Z] progress 1400/1400
+[2026-10-16T04:34:47.747Z] progress 800/800
+[2026-10-16T04:34:47.754Z] progress 800/800
+[2026-10-16T04:34:47.790Z] progress 800/800
+[2026-10-16T04:34:47.888Z] progress 800/800
+[2026-10-16T04:34:47.959Z] progress 800/800
+[2026-10-16T04:34:47.999Z] progress 1400/1400
+[2026-10-16T04:34:48.108Z] progress 800/800
+[2026-10-16T04:34:48.130Z] progress 1400/1400
+[2026-10-16T04:34:48.341Z] progress 1400/1400
+[2026-10-16T04:34:48.362Z] progress 1400/1400
+[2026-10-16T04:34:48.760Z] progress 800/800
+[2026-10-16T04:34:49.309Z] progress 800/800
+[2026-10-16T04:34:49.352Z] progress 800/800
+[2026-10-16T04:34:49.781Z] progress 800/800
+[2026-10-16T04:34:49.843Z] progress 1400/1400
+[2026-10-16T04:34:50.044Z] progress 1400/1400
+[2026-10-16T04:34:50.737Z] progress 800/800
+[2026-10-16T04:34:50.834Z] progress 1400/1400
+[2026-10-16T04:34:50.881Z] progress 800/800
+[2026-10-16T04:34:51.043Z] merged 2048 worker part entries
+[2026-10-16T04:34:51.396Z] progress 1400/1400
+[2026-10-16T04:35:09.213Z] push ok: https://github.com/VikramMaurya6789/XHUB/commit/cb161591a601900eba5c6640e09483cedf875ba3
+[2026-10-16T04:35:09.214Z] done in 1022s: 597 streams (shard 0/2)
+[2026-10-16T04:35:13.026Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 370 streams, 694 thumbs (18302 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-16T04:35:13.026Z] done in 896s: 370 streams, 694 thumbs
+[2026-10-16T04:35:21.581Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-1: 819 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-1.json
+[2026-10-16T04:35:21.583Z] done in 1118s: 819 streams (shard 1/2)
