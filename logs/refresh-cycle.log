@@ -5616,3 +5616,50 @@ error: cannot lock ref 'refs/remotes/origin/main': is at 591bed49c925fa8a02ef43e
 [2026-10-16T07:44:54.507Z] done in 1114s: 838 streams (shard 1/2)
 [2026-10-16T07:45:24.020Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 433 streams, 686 thumbs (18304 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
 [2026-10-16T07:45:24.021Z] done in 792s: 433 streams, 686 thumbs
+[2026-10-16T07:59:37.070Z] worker shard 0/2 batch: 899 videos (7201 pending, 16074 stale available)
+[2026-10-16T08:00:30.457Z] progress 600/800
+[2026-10-16T08:01:09.901Z] progress 900/1400
+[2026-10-16T08:01:43.809Z] progress 100/899
+[2026-10-16T08:02:34.227Z] progress 700/800
+[2026-10-16T08:03:12.384Z] progress 1000/1400
+[2026-10-16T08:03:31.732Z] progress 200/899
+[2026-10-16T08:04:25.293Z] progress 800/800
+[2026-10-16T08:04:27.320Z] progress 800/800
+[2026-10-16T08:04:27.497Z] progress 800/800
+[2026-10-16T08:04:30.140Z] progress 800/800
+[2026-10-16T08:04:33.529Z] progress 800/800
+[2026-10-16T08:04:33.830Z] progress 800/800
+[2026-10-16T08:04:34.056Z] progress 800/800
+[2026-10-16T08:04:35.185Z] progress 800/800
+[2026-10-16T08:04:36.230Z] progress 800/800
+[2026-10-16T08:04:37.188Z] progress 800/800
+[2026-10-16T08:04:37.199Z] progress 800/800
+[2026-10-16T08:04:39.666Z] progress 800/800
+[2026-10-16T08:04:39.730Z] progress 800/800
+[2026-10-16T08:04:39.760Z] progress 800/800
+[2026-10-16T08:04:41.198Z] progress 800/800
+[2026-10-16T08:04:41.591Z] progress 800/800
+[2026-10-16T08:04:41.796Z] progress 800/800
+[2026-10-16T08:04:41.988Z] progress 800/800
+[2026-10-16T08:04:42.178Z] progress 800/800
+[2026-10-16T08:04:42.739Z] progress 800/800
+[2026-10-16T08:04:42.775Z] progress 800/800
+[2026-10-16T08:04:43.333Z] progress 800/800
+[2026-10-16T08:04:44.871Z] progress 800/800
+[2026-10-16T08:04:45.738Z] progress 800/800
+[2026-10-16T08:04:47.039Z] progress 800/800
+[2026-10-16T08:04:47.980Z] progress 800/800
+[2026-10-16T08:04:51.686Z] progress 800/800
+[2026-10-16T08:04:56.227Z] progress 800/800
+[2026-10-16T08:04:56.272Z] progress 800/800
+[2026-10-16T08:04:56.589Z] progress 800/800
+[2026-10-16T08:04:56.599Z] progress 800/800
+[2026-10-16T08:05:02.563Z] progress 1100/1400
+[2026-10-16T08:05:10.992Z] progress 800/800
+[2026-10-16T08:05:12.481Z] progress 300/899
+[2026-10-16T08:05:59.051Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 364 streams, 619 thumbs (18668 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
+[2026-10-16T08:05:59.054Z] done in 912s: 364 streams, 619 thumbs
+[2026-10-16T08:06:12.680Z] progress 1200/1400
+[2026-10-16T08:06:29.798Z] progress 400/899
+[2026-10-16T08:07:25.656Z] progress 1300/1400
+[2026-10-16T08:07:38.452Z] progress 500/899
