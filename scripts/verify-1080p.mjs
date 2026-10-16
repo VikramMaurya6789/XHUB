@@ -94,6 +94,11 @@ async function main() {
   const batch = ids.slice(0, BATCH);
   let verified = 0;
   let checked = 0;
+  // This run's newly resolved entries, kept separate from the on-disk files:
+  // a concurrent writer run (refresh-cycle.mjs) rewrites streams.json /
+  // hd1080.json at any time, so we must never save from a stale snapshot.
+  const runStreams = {};
+  const runHd = new Set();
 
   // Process in parallel chunks
   for (let i = 0; i < batch.length; i += CONCURRENCY) {
@@ -103,21 +108,28 @@ async function main() {
     for (const r of results) {
       checked++;
       if (r.ok && r.qualities) {
-        streams[r.id] = { ts: Date.now(), qualities: r.qualities };
+        runStreams[r.id] = { ts: Date.now(), qualities: r.qualities };
         if (r.qualities.some(q => q.quality === '1080')) {
-          hd1080[r.id] = 1;
+          runHd.add(r.id);
           verified++;
         }
       }
     }
     console.log(`progress: ${checked}/${batch.length}, verified 1080p: ${verified}`);
-    // Save incrementally (don't lose progress on timeout)
-    fs.writeFileSync(STREAMS_FILE, JSON.stringify(streams));
-    fs.writeFileSync(HD1080_FILE, JSON.stringify(hd1080));
+    // Save incrementally (don't lose progress on timeout). Re-read both files
+    // from disk first and merge this run's entries on top, so a concurrent
+    // writer's merge is never clobbered by our startup snapshot.
+    const freshStreams = load(STREAMS_FILE);
+    Object.assign(freshStreams, runStreams);
+    fs.writeFileSync(STREAMS_FILE, JSON.stringify(freshStreams));
+    const freshHd = load(HD1080_FILE);
+    for (const id of runHd) freshHd[id] = 1;
+    fs.writeFileSync(HD1080_FILE, JSON.stringify(freshHd));
     await sleep(500);
   }
 
-  console.log(`DONE: checked ${checked}, new 1080p: ${verified}, total hd1080: ${Object.keys(hd1080).length}`);
+  const totalHd = Object.keys(load(HD1080_FILE)).length;
+  console.log(`DONE: checked ${checked}, new 1080p: ${verified}, total hd1080: ${totalHd}`);
 
   // Push if we added new 1080p videos.
   // NOTE: gh.py builds the remote commit directly via the GitHub API from the
