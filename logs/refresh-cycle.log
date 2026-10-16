@@ -5663,3 +5663,7 @@ error: cannot lock ref 'refs/remotes/origin/main': is at 591bed49c925fa8a02ef43e
 [2026-10-16T08:06:29.798Z] progress 400/899
 [2026-10-16T08:07:25.656Z] progress 1300/1400
 [2026-10-16T08:07:38.452Z] progress 500/899
+[2026-10-16T08:10:16.251Z] batch: 800 videos (6837 pending, 16177 stale available)
+[2026-10-16T08:10:22.140Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-1: 756 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-1.json
+[2026-10-16T08:10:22.140Z] done in 1328s: 756 streams (shard 1/2)
+[2026-10-16T08:11:00.942Z] progress 100/800
