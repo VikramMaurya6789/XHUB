@@ -6045,3 +6045,4 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-16T10:15:56.075Z] progress 1000/1089
 [2026-10-16T10:17:11.300Z] progress 1300/1400
 [2026-10-16T10:17:34.127Z] progress 500/800
+[2026-10-16T10:22:07.382Z] worker shard 1/2 batch: 1400 videos (3644 pending, 20053 stale available)
