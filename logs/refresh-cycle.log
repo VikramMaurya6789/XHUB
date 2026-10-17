@@ -9219,3 +9219,7 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-17T00:39:43.822Z] progress 900/1400
 [2026-10-17T00:40:00.669Z] merged 1035 worker part entries
 [2026-10-17T00:40:06.056Z] progress 700/1037
+[2026-10-17T00:44:13.688Z] thumb fast-lane: 126 newest videos
+[2026-10-17T00:44:13.712Z] batch: 926 videos (161 pending, 23296 stale available)
+[2026-10-17T00:44:56.726Z] progress 1300/1400
+[2026-10-17T00:45:02.370Z] progress 100/926
