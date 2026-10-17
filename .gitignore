@@ -10,3 +10,4 @@ yarn-error.log*
 scripts/.refresh-loop.lock
 logs/refresh-loop.log
 logs/refresh-loop.err.log
+.vercel
