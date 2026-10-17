@@ -11447,3 +11447,5 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-17T13:13:20.150Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh cycle: 689 streams, 1512 thumbs (26321 total)" --dir /home/hatch/workspace/xhub-sync --auto public/streams.json public/thumbs.json public/hd1080.json public/streams-shard-0.json public/streams-shard-1.json public/streams-shard-2.json public/streams-shard-3.json public/streams-shard-4.json public/streams-shard-5.json
 [2026-10-17T13:13:20.151Z] done in 1137s: 689 streams, 1512 thumbs
 [2026-10-17T13:13:30.977Z] progress 1100/1176
+[2026-10-17T13:14:56.068Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-0: 1175 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-0.json
+[2026-10-17T13:14:56.068Z] done in 652s: 1175 streams (shard 0/2)
