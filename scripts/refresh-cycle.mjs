@@ -199,17 +199,26 @@ async function main() {
   const batch = [...pending, ...stale]
     .filter(id => !WORKER_MODE || shardOf(id) === SHARD)
     .slice(0, BATCH);
-  // Thumb fast-lane: newest catalog videos first (writer only). Workers never
+  // Thumb fast-lane: ALL stale thumbs oldest-first (writer only). Workers never
   // touch thumbs.json, so the lane is writer-exclusive by construction.
+  // PERMANENT FIX 2026-10-17: Redtube thumb URLs expire in ~60 min. The old
+  // lane only covered the newest 600 videos, leaving 25k+ older videos with
+  // permanently expired thumbs. Now we process ALL stale thumbs oldest-first.
   const laneSet = new Set();
   let lane = [];
   if (!WORKER_MODE) {
-    lane = catalogOrder.slice(0, THUMB_FASTLANE_N).map(([id]) => id).filter(id => {
-      const te = thumbs[id];
-      return !te?.url || (now - (te.ts || 0) > THUMB_FASTLANE_MIN * 60 * 1000);
-    });
+    // 26k videos, 60-min TTL, 45-min threshold = 588/min needed.
+    // CONC=24 @ ~1.5s/scrape = ~960/min capacity. 6000/run fits 10-min window.
+    const THUMB_FASTLANE_BATCH = 6000; // per 10-min run, oldest-first
+    lane = Object.keys(catalog)
+      .filter(id => {
+        const te = thumbs[id];
+        return !te?.url || (now - (te.ts || 0) > THUMB_FASTLANE_MIN * 60 * 1000);
+      })
+      .sort((a, b) => (thumbs[a]?.ts || 0) - (thumbs[b]?.ts || 0))
+      .slice(0, THUMB_FASTLANE_BATCH);
     for (const id of lane) laneSet.add(id);
-    if (lane.length) log(`thumb fast-lane: ${lane.length} newest videos`);
+    if (lane.length) log(`thumb fast-lane: ${lane.length} stalest videos (oldest-first)`);
   }
   const fullBatch = [...lane, ...batch];
   log(`${WORKER_MODE ? `worker shard ${SHARD}/${SHARDS} ` : ''}batch: ${fullBatch.length} videos (${pending.length} pending, ${stale.length} stale available)`);

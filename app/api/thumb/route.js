@@ -281,11 +281,15 @@ export async function GET(req) {
     }
 
     // Step 5: Fallback SVG ensures image never breaks in the browser
+    // PERMANENT FIX 2026-10-17: Cache SVG for only 60s (was 3600s) so that
+    // transient failures retry quickly instead of showing placeholder for an hour.
+    // The expanded thumb fast-lane (6000/run oldest-first) keeps thumbs.json
+    // fresh, so SVG should be rare and short-lived.
     return new NextResponse(FALLBACK_SVG, {
       status: 200,
       headers: {
         'Content-Type': 'image/svg+xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=3600',
+        'Cache-Control': 'public, max-age=60',
       },
     });
   } catch (e) {
