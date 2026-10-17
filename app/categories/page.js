@@ -7,13 +7,14 @@ import { POPULAR_CATEGORIES } from '@/lib/videos';
 import { FilmIcon, ChevronRightIcon } from '@/components/Icons';
 
 export default function CategoriesIndexPage() {
+  const seen = new Set();
   const extendedCategories = [
     ...POPULAR_CATEGORIES,
     { slug: 'hardcore', name: 'Hardcore' },
     { slug: 'fetish', name: 'Fetish & Feet' },
     { slug: 'vr', name: 'VR Videos' },
     { slug: 'vintage', name: 'Vintage / Classic' }
-  ];
+  ].filter(c => c && c.slug && !seen.has(c.slug) && seen.add(c.slug));
 
   return (
     <>

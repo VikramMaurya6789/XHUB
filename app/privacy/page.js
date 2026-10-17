@@ -37,7 +37,7 @@ export default function PrivacyPage() {
           <section>
             <h2 style={{ color: '#fff', fontSize: '1.15rem', marginBottom: '0.5rem' }}>3. Third-Party CDNs</h2>
             <p>
-              When playing a video, video segments stream directly between your browser and authorized adult content delivery networks (e.g. RedTube, xhcdn). These CDNs handle media delivery under their respective privacy policies.
+              When playing a video, video segments stream directly between your browser and authorized adult content delivery networks (e.g. xHamster, xhcdn). These CDNs handle media delivery under their respective privacy policies.
             </p>
           </section>
 

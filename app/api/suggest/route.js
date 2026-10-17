@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import path from 'path';
+import { POPULAR_CATEGORIES } from '@/lib/videos';
 
 /**
  * GET /api/suggest?q=...
@@ -35,7 +36,6 @@ export async function GET(req) {
     if (q.length < 2) {
       return NextResponse.json({ suggestions: [] });
     }
-
     const index = await getTitleIndex();
     const words = q.split(/\s+/).filter(Boolean);
     const prefix = [];
@@ -51,9 +51,13 @@ export async function GET(req) {
       if (prefix.length + contains.length >= 40) break;
     }
 
-    const top = [...prefix, ...contains].slice(0, 8);
+    const matchingCategories = POPULAR_CATEGORIES
+      .filter(c => c.name.toLowerCase().includes(q) || c.slug.includes(q))
+      .map(c => ({ vkey: c.slug, title: c.name }));
+
+    const top = [...matchingCategories, ...prefix, ...contains].slice(0, 8);
     return NextResponse.json({
-      suggestions: top.map(e => ({ vkey: e.v, title: e.t })),
+      suggestions: top.map(e => ({ vkey: e.vkey || e.v, title: e.title || e.t })),
     });
   } catch {
     return NextResponse.json({ suggestions: [] });

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getFeed } from '@/lib/videos';
 
 /**
- * Debug endpoint — verifies the live data path (Redtube API -> transform).
+ * Debug endpoint — verifies the live data path (xHamster API -> transform).
  */
 export async function GET() {
   try {

@@ -175,7 +175,12 @@ export default function Player({
       hlsRef.current = null;
     }
 
-    const isHls = activeStreamUrl.includes('.m3u8');
+    const isHls =
+      activeStreamUrl.includes('.m3u8') ||
+      activeStreamUrl.includes('/stream') ||
+      activeStreamUrl.includes('/vproxy') ||
+      activeStreamUrl.includes('xhpingcdn.com') ||
+      activeStreamUrl.includes('media=hls');
 
     if (isHls && Hls.isSupported()) {
       const hls = new Hls({
@@ -829,7 +834,7 @@ export default function Player({
       {useEmbed ? (
         <div className="player-embed-wrapper" style={{ position: 'relative', width: '100%', height: '100%', minHeight: '360px', backgroundColor: '#000' }}>
           <iframe
-            src={embedUrl || `https://embed.redtube.net/?id=${encodeURIComponent(vkey)}&autoplay=1`}
+            src={embedUrl || `https://xhamster.com/embed/${encodeURIComponent(vkey)}`}
             title={title || 'XHUB Player'}
             style={{ width: '100%', height: '100%', minHeight: '360px', border: 'none', display: 'block' }}
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"

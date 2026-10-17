@@ -69,32 +69,26 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
   const [streams, setStreams] = useState([]);
   const [streamsRetrying, setStreamsRetrying] = useState(false);
 
-  // Fetch direct mp4 streams with retry (sync refreshes every 30min).
-  // URLs are rewritten through /api/vproxy because Redtube's CDN only serves
-  // video to redtube.com referers — browsers get 410 on direct URLs.
+  // Fetch direct video streams with retry (xHamster HLS & MP4).
+  // Streams play directly via Hls.js or Native video player.
   const fetchStreams = (vkey, attempt = 0) => {
     fetch(`/api/stream?vkey=${encodeURIComponent(vkey)}`)
       .then(res => (res.ok ? res.json() : null))
       .then(data => {
         if (data?.qualities?.length) {
-          const proxied = data.qualities.map(s => ({
-            ...s,
-            url: `/api/vproxy?vkey=${encodeURIComponent(vkey)}&q=${encodeURIComponent(s.quality)}`,
-          }));
-          setStreams(proxied);
+          setStreams(data.qualities);
           setStreamsRetrying(false);
-        } else if (attempt < 6) {
-          // No streams yet or refreshing — retry in 10s (max 1 min).
+        } else if (attempt < 5) {
           setStreamsRetrying(true);
-          setTimeout(() => fetchStreams(vkey, attempt + 1), 10000);
+          setTimeout(() => fetchStreams(vkey, attempt + 1), 5000);
         } else {
           setStreamsRetrying(false);
         }
       })
       .catch(() => {
-        if (attempt < 6) {
+        if (attempt < 5) {
           setStreamsRetrying(true);
-          setTimeout(() => fetchStreams(vkey, attempt + 1), 10000);
+          setTimeout(() => fetchStreams(vkey, attempt + 1), 5000);
         }
       });
   };
@@ -125,7 +119,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
       fetchStreams(vkey);
     } else if (initialVideo) {
       syncLocalStorage(initialVideo);
-      fetchStreams(vkey);
+      fetchStreams(initialVideo.vkey || vkey);
       loadRatings(initialVideo.vkey || vkey);
     }
   }, [vkey, initialVideo, initialError]);
@@ -451,7 +445,7 @@ export default function WatchClient({ vkey, initialVideo = null, initialError = 
             streamsRetrying={streamsRetrying}
             poster={video.thumb}
             title={video.title}
-            embedUrl={video.embed_url || `https://embed.redtube.net/?id=${vkey}&autoplay=1`}
+            embedUrl={video.embed_url || `https://xhamster.com/embed/${vkey}`}
             isTheater={isTheater}
             onTheaterToggle={() => setIsTheater(!isTheater)}
             onEnded={handlePlaylistEnded}

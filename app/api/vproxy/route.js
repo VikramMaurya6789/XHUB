@@ -14,7 +14,7 @@ const CDN_REFERER = 'https://xhamster.com/';
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
-const ALLOWED_HOSTS = ['xhcdn.com', 'xhpingcdn.com', 'xhamster.com', 'xhamster.desi'];
+const ALLOWED_HOSTS = ['xhcdn.com', 'xhpingcdn.com', 'xhamster.com', 'xhamster.desi', 'xhcdn.net', 'xhpingcdn.net', 'xhamster.gold'];
 
 function hostAllowed(url) {
   try {
