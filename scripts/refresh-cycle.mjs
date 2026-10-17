@@ -35,7 +35,7 @@ const BATCH = parseInt(process.argv[2] || '800', 10);
 // 2026-10-17 ~14:24 IST writer OOMed at 2300/6800 videos under the default 2GB
 // heap because the guard below only looked at the CLI arg. Workers skip the
 // fast-lane, so their effective batch stays the CLI arg.
-const THUMB_FASTLANE_MAX = 6000;
+const THUMB_FASTLANE_MAX = 1200;
 const EFFECTIVE_BATCH = BATCH + (process.argv[3] === undefined ? THUMB_FASTLANE_MAX : 0);
 // Heap guard (2026-10-15 ~20:40 IST): at CONC=32 the allocation rate overwhelms
 // V8 GC under the default ~2GB heap — the writer batch (2600) FATAL-OOMed at
