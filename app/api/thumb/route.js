@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { getThumbRawUrl } from '../../../lib/videos.js';
 
 /**
  * XHUB thumbnail proxy — GET /api/thumb?vkey=<video_id>&src=<raw_thumb_url>
  *
- * Implements A1 Thumbnail Pipeline with 100% Reliability:
- * 1. Checks if video ID is in the resolved high-res map (public/thumbs.json or raw GitHub main).
- * 2. If absent or expired, falls back to the original thumbnail URL (src) fetched with
- *    Referer: https://www.redtube.com/ (bypasses ISP blocks of rdtcdn.com in India).
- * 3. Fallback to direct page scrape if src is missing.
+ * Implements 100% Reliability for xHamster thumbnails:
+ * 1. Checks if video ID is in the resolved high-res map (public/thumbs.json).
+ * 2. If absent, falls back to the original thumbnail URL (src) fetched with
+ *    Referer: https://xhamster.com/ (bypasses ISP blocks and CDN 403 Forbidden).
+ * 3. Fallback to direct xHamster metadata lookup if src is missing.
  * 4. Streams back binary image bytes with Cache-Control: public, max-age=31536000, immutable.
  */
 
@@ -60,13 +61,13 @@ async function getThumbsMap() {
       }
     }
   } catch (e) {
-    console.error('Failed to fetch remote thumbs.json:', e.message);
+    // remote fetch failed
   }
 
   return memoryThumbsMap || {};
 }
 
-// Fallback direct page scraper
+// Fallback SVG ensures image never breaks in the browser
 const FALLBACK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="100%" height="100%">
   <rect width="640" height="360" fill="#111111"/>
   <rect x="15" y="15" width="610" height="330" rx="10" fill="#1c1c1c" stroke="#2a2a2a" stroke-width="2"/>
@@ -79,118 +80,24 @@ function isCorruptThumb(url) {
   return !url || typeof url !== 'string' || !url.startsWith('http') || url.includes('/videos//original');
 }
 
-// Fallback direct page scraper and official API
-async function resolveDirectFallback(id) {
-  // 1. Try embed.redtube.net (fast, unblocked, 100% reliable)
-  try {
-    const embedRes = await fetch(`https://embed.redtube.net/?id=${id}`, {
-      headers: {
-        'User-Agent': UA,
-        'Referer': 'https://embed.redtube.net/',
-      },
-      signal: AbortSignal.timeout(4000),
-    });
-    if (embedRes.ok) {
-      const html = await embedRes.text();
-      const line = html.split('\n').find(l => l.includes('var flashvars_'));
-      if (line) {
-        const start = line.indexOf('{');
-        const end = line.lastIndexOf('}');
-        if (start !== -1 && end > start) {
-          const fv = JSON.parse(line.substring(start, end + 1));
-          const img = fv.image_url ? String(fv.image_url).replace(/\\\//g, '/') : null;
-          if (img && !isCorruptThumb(img)) {
-            return img;
-          }
-        }
-      }
-    }
-  } catch (e) {
-    console.error('Embed thumb scrape failed for', id, e.message);
-  }
-
-  // 2. Try redtube.net & redtube.com mirrors HTML
-  const mirrors = [`https://www.redtube.net/${id}`, `https://www.redtube.com/${id}`];
-  for (const pageUrl of mirrors) {
-    try {
-      const pageRes = await fetch(pageUrl, {
-        headers: {
-          'User-Agent': UA,
-          'Accept': 'text/html,application/xhtml+xml',
-          'Referer': 'https://www.google.com/',
-        },
-        redirect: 'follow',
-        signal: AbortSignal.timeout(5000),
-      });
-      if (pageRes.ok) {
-        const html = await pageRes.text();
-        const m1 = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
-        if (m1 && m1[1] && !isCorruptThumb(m1[1])) return m1[1].replace(/&amp;/g, '&');
-        const m2 = html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-        if (m2 && m2[1] && !isCorruptThumb(m2[1])) return m2[1].replace(/&amp;/g, '&');
-        const m3 = html.match(/"thumbnailUrl"\s*:\s*"([^"]+)"/i);
-        if (m3 && m3[1]) {
-          const clean = m3[1].replace(/\\\//g, '/').replace(/&amp;/g, '&');
-          if (!isCorruptThumb(clean)) return clean;
-        }
-      }
-    } catch {}
-  }
-
-  // 2. Try official Redtube API
-  try {
-    const apiRes = await fetch(
-      `https://api.redtube.com/?data=redtube.Videos.getVideoById&output=json&video_id=${id}&thumbsize=all`,
-      {
-        headers: { 'User-Agent': UA },
-        signal: AbortSignal.timeout(4000),
-      }
-    );
-    if (apiRes.ok) {
-      const data = await apiRes.json();
-      const v = data?.video;
-      if (v) {
-        if (Array.isArray(v.thumbs) && v.thumbs.length > 0) {
-          const big = v.thumbs.find(t => t.size === 'big');
-          const med2 = v.thumbs.find(t => t.size === 'medium2');
-          const med1 = v.thumbs.find(t => t.size === 'medium1');
-          const s = (big || med2 || med1 || v.thumbs[0])?.src;
-          if (s && !isCorruptThumb(s)) return s;
-        }
-        if (v.default_thumb && !isCorruptThumb(v.default_thumb)) {
-          return v.default_thumb;
-        }
-      }
-    }
-  } catch {}
-
-  return null;
-}
-
 async function fetchImageBytes(url) {
-  const res = await fetch(url, {
+  return fetch(url, {
     headers: {
       'User-Agent': UA,
-      'Referer': 'https://www.redtube.com/',
+      'Referer': 'https://xhamster.com/',
       'Accept': 'image/avif,image/webp,image/*,*/*;q=0.8',
     },
     signal: AbortSignal.timeout(6000),
   });
-  // 410/472 = expired CDN token — treat as fetch failure so fallback logic runs
-  if (res.status === 410 || res.status === 472) {
-    throw new Error('CDN token expired');
-  }
-  return res;
 }
 
 export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
-    const raw = searchParams.get('vkey') || '';
-    const id = raw.replace(/[^\d]/g, '');
+    const vkey = (searchParams.get('vkey') || searchParams.get('id') || '').trim();
     const fallbackSrc = searchParams.get('src') || searchParams.get('url') || '';
 
-    if (!id && !fallbackSrc) {
+    if (!vkey && !fallbackSrc) {
       return new NextResponse(FALLBACK_SVG, {
         status: 200,
         headers: {
@@ -200,11 +107,11 @@ export async function GET(req) {
       });
     }
 
-    // Step 1: Look up in high-res thumbs.json map
+    // Step 1: Look up in high-res thumbs.json map if available
     let imgUrl = null;
-    if (id) {
+    if (vkey) {
       const map = await getThumbsMap();
-      const entry = map[id];
+      const entry = map[vkey] || map[vkey.replace(/^xh/, '')];
       imgUrl = typeof entry === 'string' ? entry : entry?.url;
     }
 
@@ -221,6 +128,7 @@ export async function GET(req) {
               'Content-Type': ct,
               'Cache-Control': 'public, max-age=31536000, immutable',
               'Content-Length': String(buf.byteLength),
+              'Access-Control-Allow-Origin': '*',
             },
           });
         }
@@ -236,9 +144,8 @@ export async function GET(req) {
         if (imgRes.ok && imgRes.body) {
           const buf = await imgRes.arrayBuffer();
           const ct = imgRes.headers.get('content-type') || 'image/jpeg';
-          // Cache in memory for subsequent requests
-          if (id && memoryThumbsMap) {
-            memoryThumbsMap[id] = { url: fallbackSrc, ts: Date.now() };
+          if (vkey && memoryThumbsMap) {
+            memoryThumbsMap[vkey] = { url: fallbackSrc, ts: Date.now() };
           }
           return new NextResponse(buf, {
             status: 200,
@@ -246,26 +153,26 @@ export async function GET(req) {
               'Content-Type': ct,
               'Cache-Control': 'public, max-age=31536000, immutable',
               'Content-Length': String(buf.byteLength),
+              'Access-Control-Allow-Origin': '*',
             },
           });
         }
       } catch (e) {
-        // Fall through to direct scraper
+        // Fall through to direct lookup
       }
     }
 
-    // Step 4: Direct page scrape / API fallback
-    if (id) {
-      const scrapedUrl = await resolveDirectFallback(id);
-      if (scrapedUrl) {
+    // Step 4: Direct xHamster metadata lookup
+    if (vkey) {
+      const rawThumb = await getThumbRawUrl(vkey);
+      if (rawThumb && !isCorruptThumb(rawThumb)) {
         try {
-          const imgRes = await fetchImageBytes(scrapedUrl);
+          const imgRes = await fetchImageBytes(rawThumb);
           if (imgRes.ok && imgRes.body) {
             const buf = await imgRes.arrayBuffer();
             const ct = imgRes.headers.get('content-type') || 'image/jpeg';
-            // Cache in memory
             if (memoryThumbsMap) {
-              memoryThumbsMap[id] = { url: scrapedUrl, ts: Date.now() };
+              memoryThumbsMap[vkey] = { url: rawThumb, ts: Date.now() };
             }
             return new NextResponse(buf, {
               status: 200,
@@ -273,6 +180,7 @@ export async function GET(req) {
                 'Content-Type': ct,
                 'Cache-Control': 'public, max-age=31536000, immutable',
                 'Content-Length': String(buf.byteLength),
+                'Access-Control-Allow-Origin': '*',
               },
             });
           }
@@ -281,15 +189,12 @@ export async function GET(req) {
     }
 
     // Step 5: Fallback SVG ensures image never breaks in the browser
-    // PERMANENT FIX 2026-10-17: Cache SVG for only 60s (was 3600s) so that
-    // transient failures retry quickly instead of showing placeholder for an hour.
-    // The expanded thumb fast-lane (6000/run oldest-first) keeps thumbs.json
-    // fresh, so SVG should be rare and short-lived.
     return new NextResponse(FALLBACK_SVG, {
       status: 200,
       headers: {
         'Content-Type': 'image/svg+xml; charset=utf-8',
-        'Cache-Control': 'public, max-age=60',
+        'Cache-Control': 'public, max-age=3600',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   } catch (e) {
@@ -298,6 +203,7 @@ export async function GET(req) {
       headers: {
         'Content-Type': 'image/svg+xml; charset=utf-8',
         'Cache-Control': 'public, max-age=60',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   }
