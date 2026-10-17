@@ -9255,3 +9255,66 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-17T01:19:34.301Z] progress 1200/1240
 [2026-10-17T01:20:12.541Z] merged 888 worker part entries
 [2026-10-17T01:20:16.223Z] progress 1100/1400
+[2026-10-17T01:23:10.499Z] thumb fast-lane: 600 newest videos
+[2026-10-17T01:23:10.503Z] batch: 1400 videos (625 pending, 23895 stale available)
+[2026-10-17T01:23:18.098Z] push FAILED: Command failed: PYTHONPATH=/opt/muse/skills/custom-connector-setup/bin python3 /home/hatch/workspace/custom-connectors/custom.legacy-github/bin/gh.py push --repo VikramMaurya6789/XHUB --message "refresh part-1: 688 streams" --dir /home/hatch/workspace/xhub-sync --auto public/refresh-part-1.json
+[2026-10-17T01:23:18.101Z] done in 1172s: 688 streams (shard 1/2)
+[2026-10-17T01:23:18.974Z] progress 400/1400
+[2026-10-17T01:23:59.121Z] progress 100/1400
+[2026-10-17T01:24:16.121Z] progress 500/1400
+[2026-10-17T01:24:44.494Z] progress 200/1400
+[2026-10-17T01:25:03.026Z] progress 600/1400
+[2026-10-17T01:25:34.450Z] progress 300/1400
+[2026-10-17T01:25:56.141Z] progress 700/1400
+[2026-10-17T01:26:31.419Z] progress 400/1400
+[2026-10-17T01:26:44.820Z] progress 800/1400
+[2026-10-17T01:27:18.444Z] progress 500/1400
+[2026-10-17T01:27:39.686Z] progress 900/1400
+[2026-10-17T01:28:04.290Z] progress 600/1400
+[2026-10-17T01:28:29.171Z] progress 1000/1400
+[2026-10-17T01:28:53.845Z] progress 700/1400
+[2026-10-17T01:29:16.934Z] progress 1100/1400
+[2026-10-17T01:29:40.770Z] progress 800/1400
+[2026-10-17T01:30:09.881Z] progress 1200/1400
+[2026-10-17T01:30:23.012Z] progress 900/1400
+[2026-10-17T01:31:16.616Z] progress 1000/1400
+[2026-10-17T01:31:18.753Z] progress 1300/1400
+[2026-10-17T01:32:03.777Z] git pull failed: Command failed: git fetch -q origin && git reset -q --hard origin/main
+fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 stream 1 was not closed cleanly: CANCEL (err 8)
+
+[2026-10-17T01:32:05.713Z] worker shard 1/2 batch: 1400 videos (625 pending, 24123 stale available)
+[2026-10-17T01:32:16.914Z] progress 1100/1400
+[2026-10-17T01:32:48.454Z] progress 1400/1400
+[2026-10-17T01:32:49.493Z] progress 1400/1400
+[2026-10-17T01:32:49.513Z] progress 1400/1400
+[2026-10-17T01:32:49.743Z] progress 1400/1400
+[2026-10-17T01:32:49.795Z] progress 1400/1400
+[2026-10-17T01:32:49.936Z] progress 1400/1400
+[2026-10-17T01:32:50.386Z] progress 1400/1400
+[2026-10-17T01:32:56.042Z] progress 1400/1400
+[2026-10-17T01:32:56.149Z] progress 1400/1400
+[2026-10-17T01:32:57.110Z] progress 1400/1400
+[2026-10-17T01:32:57.503Z] progress 1400/1400
+[2026-10-17T01:32:58.236Z] progress 1400/1400
+[2026-10-17T01:32:59.055Z] progress 1400/1400
+[2026-10-17T01:32:59.573Z] progress 1400/1400
+[2026-10-17T01:33:00.604Z] progress 1400/1400
+[2026-10-17T01:33:01.963Z] progress 1400/1400
+[2026-10-17T01:33:03.060Z] progress 1400/1400
+[2026-10-17T01:33:03.370Z] progress 1400/1400
+[2026-10-17T01:33:03.401Z] progress 1400/1400
+[2026-10-17T01:33:04.772Z] progress 1400/1400
+[2026-10-17T01:33:05.482Z] progress 1400/1400
+[2026-10-17T01:33:07.406Z] progress 1400/1400
+[2026-10-17T01:33:08.190Z] progress 1400/1400
+[2026-10-17T01:33:08.967Z] progress 1400/1400
+[2026-10-17T01:33:10.307Z] progress 1400/1400
+[2026-10-17T01:33:10.694Z] progress 1400/1400
+[2026-10-17T01:33:15.222Z] progress 1400/1400
+[2026-10-17T01:33:15.328Z] progress 1200/1400
+[2026-10-17T01:33:22.734Z] progress 100/1400
+[2026-10-17T01:33:25.547Z] progress 1400/1400
+[2026-10-17T01:33:26.422Z] progress 1400/1400
+[2026-10-17T01:33:26.643Z] progress 1400/1400
+[2026-10-17T01:33:29.993Z] progress 1400/1400
+[2026-10-17T01:33:33.447Z] progress 1400/1400
