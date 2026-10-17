@@ -12124,3 +12124,5 @@ fatal: unable to access 'https://github.com/VikramMaurya6789/XHUB.git/': HTTP/2 
 [2026-10-17T15:28:44.026Z] worker shard 0/2 batch: 6 videos (178 pending, 20392 stale available)
 [2026-10-17T15:29:04.635Z] progress 200/2000
 [2026-10-17T15:29:06.594Z] progress 1200/1400
+[2026-10-17T15:38:16.821Z] worker shard 0/2 batch: 25 videos (178 pending, 21059 stale available)
+[2026-10-17T15:38:18.298Z] progress 800/1400

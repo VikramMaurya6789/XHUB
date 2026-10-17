@@ -1,0 +1,14 @@
+error: patch failed: scripts/refresh-cycle.mjs:3
+error: scripts/refresh-cycle.mjs: patch does not apply
+error: patch failed: app/api/stream/route.js:25
+error: app/api/stream/route.js: patch does not apply
+[2026-10-17T15:35:49.698Z] worker shard 1/2 batch: 1400 videos (178 pending, 20575 stale available)
+[2026-10-17T15:36:06.663Z] progress 100/1400
+[2026-10-17T15:36:22.696Z] progress 200/1400
+[2026-10-17T15:36:41.128Z] progress 300/1400
+[2026-10-17T15:37:00.551Z] progress 400/1400
+[2026-10-17T15:37:19.299Z] progress 500/1400
+[2026-10-17T15:37:38.191Z] progress 600/1400
+[2026-10-17T15:37:57.887Z] progress 700/1400
+[2026-10-17T15:38:18.298Z] progress 800/1400
+[2026-10-17T15:38:45.641Z] progress 900/1400
