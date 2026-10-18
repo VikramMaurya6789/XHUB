@@ -37,13 +37,15 @@ const BATCH = parseInt(process.argv[2] || '800', 10);
 // fast-lane, so their effective batch stays the CLI arg.
 const THUMB_FASTLANE_MAX = 1200;
 const EFFECTIVE_BATCH = BATCH + (process.argv[3] === undefined ? THUMB_FASTLANE_MAX : 0);
-// Heap guard (2026-10-15 ~20:40 IST): at CONC=32 the allocation rate overwhelms
-// V8 GC under the default ~2GB heap — the writer batch (2600) FATAL-OOMed at
-// ~2200 videos. Re-exec once with a 4GB heap for large batches only: shard
-// workers (batch<=2000) fit under the default cap, and three concurrent 4GB
-// heaps would risk this box's 7.9GB RAM. The cron's literal command keeps
-// working unchanged.
-if (EFFECTIVE_BATCH > 2000 && !process.env.XHUB_HEAP_OK) {
+// Heap guard (2026-10-15 ~20:40 IST; tightened 2026-10-18): at CONC=32 the
+// allocation rate overwhelms V8 GC under the default ~2GB heap. The writer's
+// merge phase (full streams.json + part files) OOMs silently at EFFECTIVE_BATCH
+// exactly 2000 (seen 2026-10-17 ~20:55 and 2026-10-18 ~09:33 IST) — the merge
+// load isn't in the batch math, so the guard must fire at >= 2000, not > 2000.
+// Re-exec once with a 4GB heap: shard workers (batch 1400, no fast-lane) stay
+// under the default cap, so at most one 4GB heap runs at a time. The cron's
+// literal command keeps working unchanged.
+if (EFFECTIVE_BATCH >= 2000 && !process.env.XHUB_HEAP_OK) {
   const r = spawnSync(process.execPath,
     ['--max-old-space-size=4096',
      ...process.execArgv.filter(a => !a.startsWith('--max-old-space-size')),
